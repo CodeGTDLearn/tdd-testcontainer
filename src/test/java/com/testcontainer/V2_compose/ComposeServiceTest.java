@@ -1,21 +1,22 @@
-package com.testcontainer.V1_rieckpil_container;
+package com.testcontainer.V2_compose;
 
 import com.testcontainer.V1_rieckpil.Customer;
+import com.testcontainer.V1_rieckpil.CustomerService;
 import com.testcontainer.V1_rieckpil.ICustomerRepo;
+import com.testcontainer.V1_rieckpil.ICustomerService;
 import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -24,38 +25,53 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-//TUTORIAL: https://rieckpil.de/mongodb-testcontainers-setup-for-datamongotest/
-//@Testcontainers
-//@DataMongoTest(excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class)
-class CustomerRepoTest extends CustomerConfigTest {
+class ComposeServiceTest extends ComposeConfigTest {
 
     @Autowired
     private ICustomerRepo repo;
 
+//    @Autowired
+    private ICustomerService service;
+
     private Customer cust1, cust2;
-    List<Customer> customerList;
+    private List<Customer> customerList;
+
+    static final int COMP_DBPORT = 27017;
+    static final String COMP_PATH = "src/test/resources/v2-test-compose.yml";
+    static final String COMP_SERVICE = "db";
 
     @Container
-    static MongoDBContainer container = new MongoDBContainer("mongo:4.4.2");
+    public static DockerComposeContainer<?> compose =
+            new DockerComposeContainer<>(
+                    new File(COMP_PATH))
+                    .withExposedService(COMP_SERVICE,COMP_DBPORT);
 
 
-    @DynamicPropertySource
-    static void setProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri",container::getReplicaSetUrl);
+    public String testContainerDbUrl() {
+        return "http://" +
+                compose.getServiceHost(COMP_SERVICE,COMP_DBPORT) + ":" +
+                compose.getServicePort(COMP_SERVICE,COMP_DBPORT);
     }
 
 
     @BeforeEach
     void setUp() {
+        //------------------------------------------//
+        //VERY IMPORTANT!!!!
+        //DEPENDENCY INJECTION MUST BE DONE MANUALLY
+        service = new CustomerService(repo);
+        //------------------------------------------//
+
         cust1 = customerWithName().create();
         cust2 = customerWithName().create();
         customerList = Arrays.asList(cust1,cust2);
 
-        repo.deleteAll()
+        System.out.println(testContainerDbUrl());
+
+        service.removeAll()
             .thenMany(Flux.fromIterable(customerList))
-            .flatMap(repo::save)
+            .flatMap(service::save)
             .doOnNext(item -> System.out.println(" Inserted item is: " + item))
             .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
     }
@@ -63,18 +79,14 @@ class CustomerRepoTest extends CustomerConfigTest {
 
     @AfterEach
     void tearDown() {
-        repo.deleteAll();
+        service.removeAll();
     }
 
-    @Test
-    void checkContainer() {
-        assertTrue(container.isRunning());
-    }
 
     @Test
     public void save() {
         StepVerifier
-                .create(repo.save(cust1))
+                .create(service.save(cust1))
                 .expectSubscription()
                 .expectNext(cust1)
                 .verifyComplete();
@@ -84,7 +96,7 @@ class CustomerRepoTest extends CustomerConfigTest {
     @Test
     public void findAllCount() {
         StepVerifier
-                .create(repo.findAll())
+                .create(service.findAll())
                 .expectSubscription()
                 .expectNextCount(2)
                 .verifyComplete();
@@ -94,7 +106,7 @@ class CustomerRepoTest extends CustomerConfigTest {
     @Test
     public void findAllNextMatches() {
         StepVerifier
-                .create(repo.findAll())
+                .create(service.findAll())
                 .expectNextMatches(u -> u.getId()
                                          .equals(cust1.getId()))
                 .expectComplete();
@@ -105,7 +117,7 @@ class CustomerRepoTest extends CustomerConfigTest {
     public void findAllNext() {
 
         StepVerifier
-                .create(repo.findAll())
+                .create(service.findAll())
                 .expectNext(cust1)
                 .expectNext(cust2)
                 .expectComplete();
