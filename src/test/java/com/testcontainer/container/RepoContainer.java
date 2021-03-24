@@ -1,8 +1,7 @@
-package com.testcontainer.V1_container;
+package com.testcontainer.container;
 
-import com.testcontainer.V1_rieckpil.Customer;
-import com.testcontainer.V1_rieckpil.ICustomerRepo;
-import org.junit.Assert;
+import com.testcontainer.api.Customer;
+import com.testcontainer.api.ICustomerRepo;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,28 +23,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 //TUTORIAL: https://rieckpil.de/mongodb-testcontainers-setup-for-datamongotest/
-//@Testcontainers
-//@DataMongoTest(excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class)
-class RepoTest extends ConfigTest {
-
-    @Autowired
-    private ICustomerRepo repo;
+class RepoContainer extends ConfigContainer {
 
     private Customer cust1, cust2;
     private List<Customer> customerList;
 
-    @Container
-    static MongoDBContainer container = new MongoDBContainer("mongo:4.4.2");
-
-
-    @DynamicPropertySource
-    static void setProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri",container::getReplicaSetUrl);
-    }
-
+    @Autowired
+    private ICustomerRepo repo;
 
     @BeforeEach
     void setUp() {
@@ -124,9 +112,9 @@ class RepoTest extends ConfigTest {
                       .schedule(task);
 
             task.get(10,TimeUnit.SECONDS);
-            Assert.fail("should fail");
+            fail("should fail");
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            Assert.assertTrue("detected",e.getCause() instanceof BlockingOperationError);
+            assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
         }
     }
 }

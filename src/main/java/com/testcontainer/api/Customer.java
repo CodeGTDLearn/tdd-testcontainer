@@ -1,4 +1,4 @@
-package com.testcontainer.V1_rieckpil;
+package com.testcontainer.api;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

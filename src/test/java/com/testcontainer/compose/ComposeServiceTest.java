@@ -1,9 +1,9 @@
-package com.testcontainer.V2_compose;
+package com.testcontainer.compose;
 
-import com.testcontainer.V1_rieckpil.Customer;
-import com.testcontainer.V1_rieckpil.CustomerService;
-import com.testcontainer.V1_rieckpil.ICustomerRepo;
-import com.testcontainer.V1_rieckpil.ICustomerService;
+import com.testcontainer.api.Customer;
+import com.testcontainer.api.CustomerService;
+import com.testcontainer.api.ICustomerRepo;
+import com.testcontainer.api.ICustomerService;
 import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

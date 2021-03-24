@@ -1,18 +1,19 @@
-package com.testcontainer.V1_rieckpil;
+package com.testcontainer.api;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 //TUTORIAL: https://rieckpil.de/mongodb-testcontainers-setup-for-datamongotest/
+@Service
 @AllArgsConstructor
 @Slf4j
-@Service
 public class CustomerService implements ICustomerService {
 
-    private ICustomerRepo repo;
+    private final ICustomerRepo repo;
 
     @Override
     public Mono<Customer> save(Customer customer) {
@@ -27,10 +28,5 @@ public class CustomerService implements ICustomerService {
     @Override
     public Mono<Void> removeAll(){
         return repo.deleteAll();
-    }
-
-    @Override
-    public Mono<Customer> saveCustomer(Customer customer){
-        return repo.save(customer);
     }
 }

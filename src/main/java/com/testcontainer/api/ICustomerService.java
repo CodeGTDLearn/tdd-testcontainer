@@ -1,4 +1,4 @@
-package com.testcontainer.V1_rieckpil;
+package com.testcontainer.api;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -10,5 +10,4 @@ public interface ICustomerService {
 
     Mono<Void> removeAll();
 
-    Mono<Customer> saveCustomer(Customer customer);
 }

@@ -1,7 +1,7 @@
 package com.testcontainer.databuilder;
 
 import com.github.javafaker.Faker;
-import com.testcontainer.V1_rieckpil.Customer;
+import com.testcontainer.api.Customer;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -17,6 +17,14 @@ public class CustomerBuilder {
 
     public static CustomerBuilder customerWithName() {
         Customer customer1 = new Customer();
+        customer1.setEmail(faker.internet().emailAddress());
+        customer1.setRating(faker.number().numberBetween(1,55));
+        return CustomerBuilder.builder().customer(customer1).build();
+    }
+
+    public static CustomerBuilder customerWithIdAndName(String id) {
+        Customer customer1 = new Customer();
+        customer1.setId(id);
         customer1.setEmail(faker.internet().emailAddress());
         customer1.setRating(faker.number().numberBetween(1,55));
         return CustomerBuilder.builder().customer(customer1).build();
