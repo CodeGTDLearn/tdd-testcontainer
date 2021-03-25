@@ -7,10 +7,6 @@ import com.testcontainer.api.ICustomerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Container;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -27,7 +23,7 @@ import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ServiceContainer extends ConfigContainer {
+class ContainerService extends ConfigTests {
 
     private Customer cust1, cust2;
 
@@ -48,7 +44,7 @@ class ServiceContainer extends ConfigContainer {
         cust2 = customerWithName().create();
         List<Customer> customerList = Arrays.asList(cust1,cust2);
 
-        service.removeAll()
+        service.deleteAll()
                .thenMany(Flux.fromIterable(customerList))
                .flatMap(service::save)
                .doOnNext(item -> System.out.println(" Inserted item is: " + item))
@@ -73,7 +69,7 @@ class ServiceContainer extends ConfigContainer {
 
 
     @Test
-    public void findCount() {
+    public void findAll() {
         StepVerifier
                 .create(service.findAll())
                 .expectSubscription()
@@ -99,6 +95,22 @@ class ServiceContainer extends ConfigContainer {
                 .expectNext(cust1)
                 .expectNext(cust2)
                 .expectComplete();
+    }
+
+    @Test
+    public void deleteAll() {
+
+        StepVerifier
+                .create(service.deleteAll())
+                .expectSubscription()
+                .verifyComplete();
+
+        StepVerifier
+                .create(service.findAll())
+                .expectSubscription()
+                .expectNextCount(0)
+                .verifyComplete();
+
     }
 
 

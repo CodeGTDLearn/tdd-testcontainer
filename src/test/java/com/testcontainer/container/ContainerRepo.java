@@ -6,10 +6,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Container;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -25,9 +21,10 @@ import java.util.concurrent.TimeoutException;
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 
 //TUTORIAL: https://rieckpil.de/mongodb-testcontainers-setup-for-datamongotest/
-class RepoContainer extends ConfigContainer {
+class ContainerRepo extends ConfigTests {
 
     private Customer cust1, cust2;
     private List<Customer> customerList;
@@ -47,7 +44,6 @@ class RepoContainer extends ConfigContainer {
             .doOnNext(item -> System.out.println(" Inserted item is: " + item))
             .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
     }
-
 
     @AfterEach
     void tearDown() {
@@ -70,11 +66,11 @@ class RepoContainer extends ConfigContainer {
 
 
     @Test
-    public void findAllCount() {
+    public void findAll() {
         StepVerifier
                 .create(repo.findAll())
                 .expectSubscription()
-                .expectNextCount(2)
+                .expectNextCount(customerList.toArray().length)
                 .verifyComplete();
     }
 
@@ -97,6 +93,22 @@ class RepoContainer extends ConfigContainer {
                 .expectNext(cust1)
                 .expectNext(cust2)
                 .expectComplete();
+    }
+
+    @Test
+    public void deleteAll() {
+
+        StepVerifier
+                .create(repo.deleteAll())
+                .expectSubscription()
+                .verifyComplete();
+
+        StepVerifier
+                .create(repo.findAll())
+                .expectSubscription()
+                .expectNextCount(0)
+                .verifyComplete();
+
     }
 
 

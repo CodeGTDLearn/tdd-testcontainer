@@ -8,6 +8,6 @@ public interface ICustomerService {
 
     Flux<Customer> findAll();
 
-    Mono<Void> removeAll();
+    Mono<Void> deleteAll();
 
 }

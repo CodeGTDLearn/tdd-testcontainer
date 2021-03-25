@@ -33,6 +33,6 @@ public class CustomerController {
     @DeleteMapping
     @ResponseStatus(NO_CONTENT)
     public Mono<Void> removeAll() {
-        return service.removeAll();
+        return service.deleteAll();
     }
 }

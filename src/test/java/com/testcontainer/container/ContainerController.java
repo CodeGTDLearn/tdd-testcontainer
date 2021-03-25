@@ -1,9 +1,9 @@
 package com.testcontainer.container;
 
-
 import com.github.javafaker.Faker;
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerRepo;
+import com.testcontainer.api.ICustomerService;
 import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,25 +39,35 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFOR
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 @AutoConfigureWebTestClient
-public class ControllerContainer extends ConfigTestContainers {
+public class ContainerController extends ConfigContainer {
 
     private List<Customer> customerList;
     private Customer customerWithId;
 
+    //MOCKED-SERVER: WEB-TEST-CLIENT(non-blocking client)'
+    //SHOULD BE USED WITH 'TEST-CONTAINERS'
+    //BECAUSE THERE IS NO 'REAL-SERVER' CREATED VIA DOCKER
     @Autowired
-    WebTestClient client;
+    WebTestClient mockedWebClient;
 
     @Autowired
-    private ICustomerRepo repo;
+    private ICustomerService service;
 
     final MediaType MTYPE_JSON = MediaType.APPLICATION_JSON;
     final ContentType CONT_ANY = ContentType.ANY;
     final ContentType CONT_JSON = ContentType.JSON;
+    final String REQ_MAP = "/customer";
 
 
     @BeforeEach
     public void setUpLocal() {
 
+        //REAL-SERVER INJECTED IN WEB-TEST-CLIENT(non-blocking client)'
+        //SHOULD BE USED WHEN 'DOCKER-COMPOSE' UP A REAL-WEB-SERVER
+        //BECAUSE THERE IS 'REAL-SERVER' CREATED VIA DOCKER-COMPOSE
+        // realWebClient = WebTestClient.bindToServer()
+        //                      .baseUrl("http://localhost:8080/customer")
+        //                      .build();
         customerWithId = customerWithIdAndName(Faker.instance()
                                                     .idNumber()
                                                     .valid()).create();
@@ -68,19 +78,20 @@ public class ControllerContainer extends ConfigTestContainers {
                               customerWithId
                              );
 
-        repo.deleteAll()
+
+        service.deleteAll()
             .thenMany(Flux.fromIterable(customerList))
-            .flatMap(repo::save)
+            .flatMap(service::save)
             .doOnNext((item -> System.out.println("Inserted item is - TEST: " + item)))
             .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
     }
 
 
     @Test
-    public void webTestClient() {
-        client
+    public void saveV2() {
+        mockedWebClient
                 .post()
-                .uri("/customer")
+                .uri(REQ_MAP)
                 .body(Mono.just(customerWithId),Customer.class)
                 .exchange()
                 .expectStatus()
@@ -102,13 +113,13 @@ public class ControllerContainer extends ConfigTestContainers {
     public void RA() {
         RestAssuredWebTestClient
                 .given()
-                .webTestClient(client)
+                .webTestClient(mockedWebClient)
                 .header("Accept",CONT_ANY)
                 .header("Content-type",CONT_JSON)
                 .body(customerWithId)
 
                 .when()
-                .post("/customer")
+                .post(REQ_MAP)
 
                 .then()
                 .log()
@@ -129,27 +140,28 @@ public class ControllerContainer extends ConfigTestContainers {
     public void save() {
         RestAssuredWebTestClient
                 .given()
-                .webTestClient(client)
+                .webTestClient(mockedWebClient)
                 .header("Accept",ContentType.ANY)
                 .header("Content-type",ContentType.JSON)
                 .body(customerWithId)
 
                 .when()
-                .post()
+                .post(REQ_MAP)
 
                 .then()
-                .statusCode(FORBIDDEN.value())
+                .statusCode(CREATED.value())
         ;
     }
+
 
     @Test
     public void findAll() {
         RestAssuredWebTestClient
                 .given()
-                .webTestClient(client)
+                .webTestClient(mockedWebClient)
 
                 .when()
-                .get()
+                .get(REQ_MAP)
 
                 .then()
                 .statusCode(OK.value())
@@ -166,16 +178,16 @@ public class ControllerContainer extends ConfigTestContainers {
 
 
     @Test
-    public void removeAll() {
+    public void deleteAll() {
         RestAssuredWebTestClient
                 .given()
-                .webTestClient(client)
+                .webTestClient(mockedWebClient)
 
                 .when()
-                .delete()
+                .delete(REQ_MAP)
 
                 .then()
-                .statusCode(FORBIDDEN.value())
+                .statusCode(NO_CONTENT.value())
         ;
 
     }

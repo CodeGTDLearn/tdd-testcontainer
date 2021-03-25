@@ -26,7 +26,7 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
-    public Mono<Void> removeAll(){
+    public Mono<Void> deleteAll(){
         return repo.deleteAll();
     }
 }
