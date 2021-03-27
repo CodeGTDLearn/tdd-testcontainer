@@ -23,7 +23,7 @@ import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ContainerService extends ConfigTests {
+public class ContainerService extends ConfigTests {
 
     private Customer cust1, cust2;
 

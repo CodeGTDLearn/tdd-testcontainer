@@ -22,6 +22,13 @@ public class CustomerBuilder {
         return CustomerBuilder.builder().customer(customer1).build();
     }
 
+    public static CustomerBuilder customerWithNameButEmailIsNull() {
+        Customer customer1 = new Customer();
+        customer1.setEmail(null);
+        customer1.setRating(faker.number().numberBetween(1,55));
+        return CustomerBuilder.builder().customer(customer1).build();
+    }
+
     public static CustomerBuilder customerWithIdAndName(String id) {
         Customer customer1 = new Customer();
         customer1.setId(id);

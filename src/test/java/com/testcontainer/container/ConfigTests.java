@@ -18,12 +18,8 @@ import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 @Slf4j
 public class ConfigTests extends ConfigContainer {
 
-//    final static String BASE_URI = "http://localhost:8080/customer";
     final private static Long MAX_TIMEOUT = 15000L;
     final private static ContentType API_CONTENT_TYPE = ContentType.JSON;
-    // @LocalServerPort
-//    final private static int port = 8080;
-
 
     @BeforeAll
     static void beforeAll() {

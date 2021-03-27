@@ -19,14 +19,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
+import static com.testcontainer.databuilder.CustomerBuilder.customerWithNameButEmailIsNull;
 import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 
 //TUTORIAL: https://rieckpil.de/mongodb-testcontainers-setup-for-datamongotest/
-class ContainerRepo extends ConfigTests {
+public class ContainerRepo extends ConfigTests {
 
-    private Customer cust1, cust2;
+    private Customer cust1, cust2, customerEmailNull;
     private List<Customer> customerList;
 
     @Autowired
@@ -36,6 +37,8 @@ class ContainerRepo extends ConfigTests {
     void setUp() {
         cust1 = customerWithName().create();
         cust2 = customerWithName().create();
+        customerEmailNull = customerWithNameButEmailIsNull().create();
+
         customerList = Arrays.asList(cust1,cust2);
 
         repo.deleteAll()
@@ -53,6 +56,15 @@ class ContainerRepo extends ConfigTests {
     @Test
     void checkContainer() {
         assertTrue(container.isRunning());
+    }
+
+    @Test
+    public void trySaveInvalidObjectWithNullInEmail() {
+        StepVerifier
+                .create(repo.save(customerEmailNull))
+                .expectSubscription()
+                .expectNext(customerEmailNull)
+                .verifyComplete();
     }
 
     @Test

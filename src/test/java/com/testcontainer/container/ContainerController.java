@@ -2,7 +2,6 @@ package com.testcontainer.container;
 
 import com.github.javafaker.Faker;
 import com.testcontainer.api.Customer;
-import com.testcontainer.api.ICustomerRepo;
 import com.testcontainer.api.ICustomerService;
 import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
@@ -19,6 +18,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -27,9 +27,8 @@ import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithIdAndName;
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
-import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -42,7 +41,7 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFOR
 public class ContainerController extends ConfigContainer {
 
     private List<Customer> customerList;
-    private Customer customerWithId;
+    private Customer customerWithId1, customerWithId2;
 
     //MOCKED-SERVER: WEB-TEST-CLIENT(non-blocking client)'
     //SHOULD BE USED WITH 'TEST-CONTAINERS'
@@ -57,6 +56,7 @@ public class ContainerController extends ConfigContainer {
     final ContentType CONT_ANY = ContentType.ANY;
     final ContentType CONT_JSON = ContentType.JSON;
     final String REQ_MAP = "/customer";
+    final String TRANSACTION_MAP = "/saveRollback";
 
 
     @BeforeEach
@@ -68,22 +68,26 @@ public class ContainerController extends ConfigContainer {
         // realWebClient = WebTestClient.bindToServer()
         //                      .baseUrl("http://localhost:8080/customer")
         //                      .build();
-        customerWithId = customerWithIdAndName(Faker.instance()
-                                                    .idNumber()
-                                                    .valid()).create();
+        customerWithId1 = customerWithIdAndName(Faker.instance()
+                                                     .idNumber()
+                                                     .valid()).create();
 
-        customerList = asList(customerWithName().create(),
-                              customerWithName().create(),
-                              customerWithName().create(),
-                              customerWithId
-                             );
+        customerWithId2 = customerWithIdAndName(Faker.instance()
+                                                     .idNumber()
+                                                     .valid()).create();
+
+        customerList = Arrays.asList(customerWithName().create(),
+                                     customerWithName().create(),
+                                     customerWithId1,
+                                     customerWithId2
+                                    );
 
 
         service.deleteAll()
-            .thenMany(Flux.fromIterable(customerList))
-            .flatMap(service::save)
-            .doOnNext((item -> System.out.println("Inserted item is - TEST: " + item)))
-            .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
+               .thenMany(Flux.fromIterable(customerList))
+               .flatMap(service::save)
+               .doOnNext((item -> System.out.println("Inserted item is - TEST: " + item)))
+               .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
     }
 
 
@@ -92,7 +96,7 @@ public class ContainerController extends ConfigContainer {
         mockedWebClient
                 .post()
                 .uri(REQ_MAP)
-                .body(Mono.just(customerWithId),Customer.class)
+                .body(Mono.just(customerWithId1),Customer.class)
                 .exchange()
                 .expectStatus()
                 .isCreated()
@@ -100,11 +104,11 @@ public class ContainerController extends ConfigContainer {
                 .contentType(MTYPE_JSON)
                 .expectBody()
                 .jsonPath("$.id")
-                .isEqualTo(customerWithId.getId())
+                .isEqualTo(customerWithId1.getId())
                 .jsonPath("$.email")
-                .isEqualTo(customerWithId.getEmail())
+                .isEqualTo(customerWithId1.getEmail())
                 .jsonPath("$.rating")
-                .isEqualTo(customerWithId.getRating())
+                .isEqualTo(customerWithId1.getRating())
         ;
     }
 
@@ -116,7 +120,7 @@ public class ContainerController extends ConfigContainer {
                 .webTestClient(mockedWebClient)
                 .header("Accept",CONT_ANY)
                 .header("Content-type",CONT_JSON)
-                .body(customerWithId)
+                .body(customerWithId1)
 
                 .when()
                 .post(REQ_MAP)
@@ -132,7 +136,7 @@ public class ContainerController extends ConfigContainer {
                 .statusCode(CREATED.value())
 
                 //equalTo para o corpo do Json
-                .body("email",containsString(customerWithId.getEmail()));
+                .body("email",containsString(customerWithId1.getEmail()));
     }
 
 
@@ -143,7 +147,7 @@ public class ContainerController extends ConfigContainer {
                 .webTestClient(mockedWebClient)
                 .header("Accept",ContentType.ANY)
                 .header("Content-type",ContentType.JSON)
-                .body(customerWithId)
+                .body(customerWithId1)
 
                 .when()
                 .post(REQ_MAP)
@@ -172,7 +176,7 @@ public class ContainerController extends ConfigContainer {
                 .body()
                 .and()
 
-                .body("id",hasItem(customerWithId.getId()))
+                .body("id",hasItem(customerWithId1.getId()))
         ;
     }
 
@@ -190,6 +194,36 @@ public class ContainerController extends ConfigContainer {
                 .statusCode(NO_CONTENT.value())
         ;
 
+    }
+
+    //check: https://www.youtube.com/watch?v=9henAE6VUbk&t=364s
+    //check: https://spring.io/blog/2019/05/16/reactive-transactions-with-spring
+    //https://www.baeldung.com/spring-data-mongodb-transactions
+    @Test
+    public void saveRollback() {
+        List<Customer> customerList = Arrays.asList(customerWithId1,customerWithId2);
+
+        RestAssuredWebTestClient
+                .given()
+                .webTestClient(mockedWebClient)
+                .header("Accept",ContentType.ANY)
+                .body(customerList)
+
+                .when()
+                .post(REQ_MAP + TRANSACTION_MAP)
+
+                .then()
+                .contentType(ContentType.JSON)
+                .statusCode(CREATED.value())
+                .log()
+                .headers()
+                .and()
+                .log()
+                .body()
+                .and()
+
+                .body("email",hasItems(customerWithId1.getEmail(),customerWithId2.getEmail()))
+        ;
     }
 
 

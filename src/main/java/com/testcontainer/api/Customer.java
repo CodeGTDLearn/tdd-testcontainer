@@ -7,6 +7,8 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import javax.validation.constraints.Null;
+
 //TUTORIAL: https://rieckpil.de/mongodb-testcontainers-setup-for-datamongotest/
 @Getter
 @Setter
@@ -17,6 +19,8 @@ public class Customer {
 
     @Id
     private String id;
+
+    @Null
     private String email;
     private Integer rating;
 }

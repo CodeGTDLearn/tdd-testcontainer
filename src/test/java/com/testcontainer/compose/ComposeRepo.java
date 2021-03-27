@@ -22,7 +22,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 
-class ComposeRepo extends ConfigTests {
+public class ComposeRepo extends ConfigTests {
 
     @Autowired
     private ICustomerRepo repo;

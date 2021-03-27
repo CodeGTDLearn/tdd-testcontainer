@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 import static org.springframework.http.HttpStatus.*;
 
 @AllArgsConstructor
@@ -15,6 +17,7 @@ import static org.springframework.http.HttpStatus.*;
 public class CustomerController {
 
     private final ICustomerService service;
+
 
     @GetMapping
     @ResponseStatus(OK)
@@ -34,5 +37,13 @@ public class CustomerController {
     @ResponseStatus(NO_CONTENT)
     public Mono<Void> removeAll() {
         return service.deleteAll();
+    }
+
+
+    @PostMapping("saveRollback")
+    @ResponseStatus(CREATED)
+    public Flux<Customer> saveList_IfThrowExceptionExecutesTheRollback
+            (@RequestBody List<Customer> customerList) {
+        return service.saveList_IfThrowExceptionExecutesTheRollback(customerList);
     }
 }
