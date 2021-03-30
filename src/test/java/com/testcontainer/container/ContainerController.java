@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
@@ -28,15 +27,13 @@ import java.util.concurrent.TimeoutException;
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithIdAndName;
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.*;
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
-@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 @AutoConfigureWebTestClient
 public class ContainerController extends ConfigContainer {
 
@@ -56,7 +53,6 @@ public class ContainerController extends ConfigContainer {
     final ContentType CONT_ANY = ContentType.ANY;
     final ContentType CONT_JSON = ContentType.JSON;
     final String REQ_MAP = "/customer";
-    final String TRANSACTION_MAP = "/saveRollback";
 
 
     @BeforeEach
@@ -194,36 +190,6 @@ public class ContainerController extends ConfigContainer {
                 .statusCode(NO_CONTENT.value())
         ;
 
-    }
-
-    //check: https://www.youtube.com/watch?v=9henAE6VUbk&t=364s
-    //check: https://spring.io/blog/2019/05/16/reactive-transactions-with-spring
-    //https://www.baeldung.com/spring-data-mongodb-transactions
-    @Test
-    public void saveRollback() {
-        List<Customer> customerList = Arrays.asList(customerWithId1,customerWithId2);
-
-        RestAssuredWebTestClient
-                .given()
-                .webTestClient(mockedWebClient)
-                .header("Accept",ContentType.ANY)
-                .body(customerList)
-
-                .when()
-                .post(REQ_MAP + TRANSACTION_MAP)
-
-                .then()
-                .contentType(ContentType.JSON)
-                .statusCode(CREATED.value())
-                .log()
-                .headers()
-                .and()
-                .log()
-                .body()
-                .and()
-
-                .body("email",hasItems(customerWithId1.getEmail(),customerWithId2.getEmail()))
-        ;
     }
 
 

@@ -10,11 +10,24 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 
-//AMBOS FUNCIONAM 'DataMongoTest' com ou sem 'excludeAutoConfiguration',
-//MAS TUTORIAL RECOMENDA o uso do 'excludeAutoConfiguration'
-//@DataMongoTest
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
+
+
+/*------------------------------------------------------------
+                         DataMongoTest
+  ------------------------------------------------------------
+a) AMBOS FUNCIONAM:
+ - @DataMongoTest
+ - @DataMongoTest(excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class)
+b) USO ALTERNATIVO (DataMongoTest/SpringBootTest) - DO CONTRARIO CONFLITARAO:
+ - @SpringBootTest(webEnvironment = RANDOM_PORT)
+  ------------------------------------------------------------*/
 @DataMongoTest(excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class)
+@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 @Slf4j
 public class ConfigTests extends ConfigContainer {
 

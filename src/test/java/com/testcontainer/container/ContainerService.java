@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ContainerService extends ConfigTests {
 
@@ -96,6 +96,7 @@ public class ContainerService extends ConfigTests {
                 .expectNext(cust2)
                 .expectComplete();
     }
+
 
     @Test
     public void deleteAll() {

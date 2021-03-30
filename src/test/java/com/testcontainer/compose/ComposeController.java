@@ -35,7 +35,6 @@ import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
-@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 @AutoConfigureWebTestClient
 public class ComposeController extends ConfigCompose {
 

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -23,11 +24,11 @@ import static com.testcontainer.databuilder.CustomerBuilder.customerWithNameButE
 import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
-//TUTORIAL: https://rieckpil.de/mongodb-testcontainers-setup-for-datamongotest/
 public class ContainerRepo extends ConfigTests {
 
-    private Customer cust1, cust2, customerEmailNull;
+    private Customer cust1, cust2;
     private List<Customer> customerList;
 
     @Autowired
@@ -37,7 +38,6 @@ public class ContainerRepo extends ConfigTests {
     void setUp() {
         cust1 = customerWithName().create();
         cust2 = customerWithName().create();
-        customerEmailNull = customerWithNameButEmailIsNull().create();
 
         customerList = Arrays.asList(cust1,cust2);
 
@@ -56,15 +56,6 @@ public class ContainerRepo extends ConfigTests {
     @Test
     void checkContainer() {
         assertTrue(container.isRunning());
-    }
-
-    @Test
-    public void trySaveInvalidObjectWithNullInEmail() {
-        StepVerifier
-                .create(repo.save(customerEmailNull))
-                .expectSubscription()
-                .expectNext(customerEmailNull)
-                .verifyComplete();
     }
 
     @Test
