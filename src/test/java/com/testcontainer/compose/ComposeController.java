@@ -2,22 +2,28 @@ package com.testcontainer.compose;
 
 import com.github.javafaker.Faker;
 import com.testcontainer.api.Customer;
-import com.testcontainer.api.ICustomerRepo;
 import com.testcontainer.api.ICustomerService;
-import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -34,27 +40,42 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
-@SpringBootTest(webEnvironment = RANDOM_PORT)
-@AutoConfigureWebTestClient
-public class ComposeController extends ConfigCompose {
+public class ComposeController  extends ConfigControllerTests {
+
+    static final int DBPORT = 27017;
+    static final String PATH = "src/test/resources/compose-testcontainers.yml";
+    static final String SERVICE = "db";
+
+    @Container
+    static DockerComposeContainer<?> compose =
+            new DockerComposeContainer<>(
+                    new File(PATH))
+                    .withExposedService(SERVICE,DBPORT);
 
     private List<Customer> customerList;
     private Customer customerWithId;
 
     // MOCKED-SERVER: WEB-TEST-CLIENT(non-blocking client)'
     // SHOULD BE USED WITH 'TEST-CONTAINERS'
-    // BECAUSE THERE IS NO 'REAL-SERVER' CREATED VIA DOCKER
+    // BECAUSE THERE IS NO 'REAL-SERVER' CREATED VIA DOCKER-COMPOSE
     @Autowired
     WebTestClient mockedWebClient;
 
     @Autowired
     private ICustomerService service;
 
-    final MediaType MTYPE_JSON = MediaType.APPLICATION_JSON;
-    final ContentType CONT_ANY = ContentType.ANY;
-    final ContentType CONT_JSON = ContentType.JSON;
     final String REQ_MAP = "/customer";
 
+    @BeforeAll
+    static void beforeAll() {
+        ConfigComposeTests.beforeAll();
+    }
+
+
+    @AfterAll
+    static void afterAll() {
+        ConfigComposeTests.afterAll();
+    }
 
     @BeforeEach
     public void setUpLocal() {
@@ -89,8 +110,8 @@ public class ComposeController extends ConfigCompose {
         RestAssuredWebTestClient
                 .given()
                 .webTestClient(mockedWebClient)
-                .header("Accept",ContentType.ANY)
-                .header("Content-type",ContentType.JSON)
+//                .header("Accept",CONT_ANY)
+//                .header("Content-type",CONT_JSON)
                 .body(customerWithId)
 
                 .when()

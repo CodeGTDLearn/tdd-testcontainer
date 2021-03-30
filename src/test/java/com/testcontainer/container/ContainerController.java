@@ -5,6 +5,8 @@ import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerService;
 import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,10 +51,21 @@ public class ContainerController extends ConfigContainer {
     @Autowired
     private ICustomerService service;
 
-    final MediaType MTYPE_JSON = MediaType.APPLICATION_JSON;
     final ContentType CONT_ANY = ContentType.ANY;
     final ContentType CONT_JSON = ContentType.JSON;
     final String REQ_MAP = "/customer";
+
+
+    @BeforeAll
+    static void beforeAll() {
+        ConfigContainerTests.beforeAll();
+    }
+
+
+    @AfterAll
+    static void afterAll() {
+        ConfigContainerTests.afterAll();
+    }
 
 
     @BeforeEach
@@ -88,7 +101,10 @@ public class ContainerController extends ConfigContainer {
 
 
     @Test
-    public void saveV2() {
+    public void saveWebTestClient() {
+
+        final MediaType MTYPE_JSON = MediaType.APPLICATION_JSON;
+
         mockedWebClient
                 .post()
                 .uri(REQ_MAP)
@@ -110,12 +126,12 @@ public class ContainerController extends ConfigContainer {
 
 
     @Test
-    public void RA() {
+    public void save() {
         RestAssuredWebTestClient
                 .given()
                 .webTestClient(mockedWebClient)
-                .header("Accept",CONT_ANY)
-                .header("Content-type",CONT_JSON)
+                //                .header("Accept",CONT_ANY)
+                //                .header("Content-type",CONT_JSON)
                 .body(customerWithId1)
 
                 .when()
@@ -128,29 +144,11 @@ public class ContainerController extends ConfigContainer {
                 .log()
                 .body()
                 .and()
-                .contentType(CONT_JSON)
+                //                .contentType(CONT_JSON)
                 .statusCode(CREATED.value())
 
                 //equalTo para o corpo do Json
                 .body("email",containsString(customerWithId1.getEmail()));
-    }
-
-
-    @Test
-    public void save() {
-        RestAssuredWebTestClient
-                .given()
-                .webTestClient(mockedWebClient)
-                .header("Accept",ContentType.ANY)
-                .header("Content-type",ContentType.JSON)
-                .body(customerWithId1)
-
-                .when()
-                .post(REQ_MAP)
-
-                .then()
-                .statusCode(CREATED.value())
-        ;
     }
 
 

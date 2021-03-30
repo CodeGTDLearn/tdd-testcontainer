@@ -2,11 +2,8 @@ package com.testcontainer.container;
 
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerRepo;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -20,19 +17,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
-import static com.testcontainer.databuilder.CustomerBuilder.customerWithNameButEmailIsNull;
 import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
-public class ContainerRepo extends ConfigTests {
+public class ContainerRepo extends ConfigContainerTests {
 
     private Customer cust1, cust2;
     private List<Customer> customerList;
 
     @Autowired
     private ICustomerRepo repo;
+
+
+    @BeforeAll
+    static void beforeAll() {
+        ConfigContainerTests.beforeAll();
+    }
+
+
+    @AfterAll
+    static void afterAll() {
+        ConfigContainerTests.afterAll();
+    }
+
 
     @BeforeEach
     void setUp() {
@@ -48,15 +55,18 @@ public class ContainerRepo extends ConfigTests {
             .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
     }
 
+
     @AfterEach
     void tearDown() {
         repo.deleteAll();
     }
 
+
     @Test
     void checkContainer() {
         assertTrue(container.isRunning());
     }
+
 
     @Test
     public void save() {
@@ -97,6 +107,7 @@ public class ContainerRepo extends ConfigTests {
                 .expectNext(cust2)
                 .expectComplete();
     }
+
 
     @Test
     public void deleteAll() {

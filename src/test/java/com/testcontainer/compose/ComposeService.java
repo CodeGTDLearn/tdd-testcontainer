@@ -4,16 +4,22 @@ import com.testcontainer.api.Customer;
 import com.testcontainer.api.CustomerService;
 import com.testcontainer.api.ICustomerRepo;
 import com.testcontainer.api.ICustomerService;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -22,15 +28,38 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
-public class ComposeService extends ConfigTests {
+public class ComposeService extends ConfigComposeTests {
+
+    static final int DBPORT = 27017;
+    static final String PATH = "src/test/resources/compose-testcontainers.yml";
+    static final String SERVICE = "db";
+
+    @Container
+    static DockerComposeContainer<?> compose =
+            new DockerComposeContainer<>(
+                    new File(PATH))
+                    .withExposedService(SERVICE,DBPORT);
+
+    private Customer cust1, cust2;
+    private List<Customer> customerList;
 
     @Autowired
     private ICustomerRepo repo;
     private ICustomerService service;
 
-    private Customer cust1, cust2;
-    private List<Customer> customerList;
+
+    @BeforeAll
+    static void beforeAll() {
+        ConfigComposeTests.beforeAll();
+    }
+
+
+    @AfterAll
+    static void afterAll() {
+        ConfigComposeTests.afterAll();
+    }
 
 
     @BeforeEach

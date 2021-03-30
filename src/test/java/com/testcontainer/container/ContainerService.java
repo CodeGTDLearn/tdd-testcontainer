@@ -4,6 +4,8 @@ import com.testcontainer.api.Customer;
 import com.testcontainer.api.CustomerService;
 import com.testcontainer.api.ICustomerRepo;
 import com.testcontainer.api.ICustomerService;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,13 +25,25 @@ import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class ContainerService extends ConfigTests {
+public class ContainerService extends ConfigContainerTests {
 
     private Customer cust1, cust2;
 
     @Autowired
     private ICustomerRepo repo;
     private ICustomerService service;
+
+
+    @BeforeAll
+    static void beforeAll() {
+        ConfigContainerTests.beforeAll();
+    }
+
+
+    @AfterAll
+    static void afterAll() {
+        ConfigContainerTests.afterAll();
+    }
 
 
     @BeforeEach
