@@ -33,7 +33,7 @@ import static org.springframework.http.HttpStatus.*;
 public class ComposeController extends ConfigControllerTests {
 
     @Container
-    private DockerComposeContainer<?> compose = new ConfigComposeTests().compose;
+    private static final DockerComposeContainer<?> compose = new ConfigComposeTests().compose;
 
     private Customer customerWithId;
 
@@ -57,6 +57,7 @@ public class ComposeController extends ConfigControllerTests {
 
     @AfterAll
     static void afterAll() {
+        compose.close();
         ConfigComposeTests.afterAll();
     }
 

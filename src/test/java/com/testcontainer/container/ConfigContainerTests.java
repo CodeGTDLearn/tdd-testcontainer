@@ -55,6 +55,7 @@ public class ConfigContainerTests extends ConfigContainer {
 
     @AfterAll
     static void afterAll() {
+        ConfigContainer.closingContainer();
         RestAssuredWebTestClient.reset();
     }
 }

@@ -18,10 +18,13 @@ public class ConfigContainer {
     @Container
     static MongoDBContainer container = new MongoDBContainer("mongo:4.4.2");
 
-
     @DynamicPropertySource
     static void setProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri",container::getReplicaSetUrl);
+    }
+
+    static void closingContainer(){
+        container.close();
     }
 
 }

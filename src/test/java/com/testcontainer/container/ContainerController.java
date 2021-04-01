@@ -51,8 +51,8 @@ public class ContainerController extends ConfigContainer {
     @Autowired
     private ICustomerService service;
 
-    final ContentType CONT_ANY = ContentType.ANY;
-    final ContentType CONT_JSON = ContentType.JSON;
+//    final ContentType CONT_ANY = ContentType.ANY;
+//    final ContentType CONT_JSON = ContentType.JSON;
     final String REQ_MAP = "/customer";
 
 

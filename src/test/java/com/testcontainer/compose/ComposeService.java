@@ -28,7 +28,7 @@ public class ComposeService extends ConfigComposeTests {
     private Customer cust1, cust2;
 
     @Container
-    private DockerComposeContainer<?> compose = new ConfigComposeTests().compose;
+    private static final DockerComposeContainer<?> compose = new ConfigComposeTests().compose;
 
     @Autowired
     private ICustomerRepo repo;
@@ -43,6 +43,7 @@ public class ComposeService extends ConfigComposeTests {
 
     @AfterAll
     static void afterAll() {
+        compose.close();
         ConfigComposeTests.afterAll();
     }
 
