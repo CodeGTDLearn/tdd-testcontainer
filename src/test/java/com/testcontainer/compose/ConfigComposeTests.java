@@ -10,9 +10,12 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.test.annotation.DirtiesContext;
+import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.io.File;
 
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
@@ -33,6 +36,18 @@ public class ConfigComposeTests {
 
     final private static Long MAX_TIMEOUT = 15000L;
     final private static ContentType API_CONTENT_TYPE = ContentType.JSON;
+
+
+    final private String COMPOSE_PATH = "src/test/resources/compose-testcontainers.yml";
+    final private int SERVICE_DB_PORT = 27017;
+    final private String SERVICE_DB = "db";
+
+
+    @Container
+    public DockerComposeContainer<?> compose =
+            new DockerComposeContainer<>(new File(COMPOSE_PATH))
+                    .withExposedService(SERVICE_DB,SERVICE_DB_PORT);
+
 
     @BeforeAll
     static void beforeAll() {
