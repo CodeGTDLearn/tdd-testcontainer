@@ -14,6 +14,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import reactor.blockhound.BlockHound;
 
 import java.io.File;
 
@@ -43,17 +44,25 @@ public class ConfigComposeTests {
     final private String SERVICE_DB = "db";
 
 
-    @Container
+//    @Container //Annotacao deve ficar na classe receptora
     public DockerComposeContainer<?> compose =
             new DockerComposeContainer<>(new File(COMPOSE_PATH))
-                    .withExposedService(SERVICE_DB,SERVICE_DB_PORT);
+                    .withExposedService(
+                            SERVICE_DB,
+                            SERVICE_DB_PORT
+                                       )
+    ;
 
 
     @BeforeAll
     static void beforeAll() {
-        //        BlockHound.install(
-        //builder -> builder.allowBlockingCallsInside("java.util.UUID" ,"randomUUID")
-        //                          );
+
+        BlockHound.install(
+                builder -> builder
+                        .allowBlockingCallsInside("java.io.PrintStream",
+                                                  "write"
+                                                 )
+                          );
 
         //DEFINE CONFIG-GLOBAL PARA OS REQUESTS DOS TESTES
         RestAssuredWebTestClient.requestSpecification =
@@ -74,7 +83,6 @@ public class ConfigComposeTests {
     static void afterAll() {
         RestAssuredWebTestClient.reset();
     }
-
 }
 
 

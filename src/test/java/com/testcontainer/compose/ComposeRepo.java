@@ -2,7 +2,7 @@ package com.testcontainer.compose;
 
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerRepo;
-import org.junit.Assert;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testcontainers.containers.DockerComposeContainer;
@@ -21,12 +21,16 @@ import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 
+@Slf4j
 public class ComposeRepo extends ConfigComposeTests {
 
-    private Customer cust1, cust2;
+    private Customer customer1;
+    private Customer customer2;
+    private List<Customer> customerList;
 
     @Container
     private static final DockerComposeContainer<?> compose = new ConfigComposeTests().compose;
+
 
     @Autowired
     private ICustomerRepo repo;
@@ -40,47 +44,92 @@ public class ComposeRepo extends ConfigComposeTests {
 
     @AfterAll
     static void afterAll() {
-        compose.close();
         ConfigComposeTests.afterAll();
     }
 
 
     @BeforeEach
     void setUp() {
-        cust1 = customerWithName().create();
-        cust2 = customerWithName().create();
-        List<Customer> customerList = Arrays.asList(cust1,cust2);
-
-        repo.deleteAll()
-            .thenMany(Flux.fromIterable(customerList))
-            .flatMap(repo::save)
-            .doOnNext(item -> System.out.println(" Inserted item is: " + item))
-            .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
+        customer1 = customerWithName().create();
+        customer2 = customerWithName().create();
+        customerList = Arrays.asList(customer1,customer2);
     }
 
 
-    @AfterEach
-    void tearDown() {
-        repo.deleteAll();
-    }
-
-
-    @Test
-    public void save() {
+    void cleanDbToTest() {
         StepVerifier
-                .create(repo.save(cust1))
+                .create(repo.deleteAll())
                 .expectSubscription()
-                .expectNext(cust1)
+                .verifyComplete();
+
+        System.out.println("\n\n==================> CLEAN-DB-TO-TEST" +
+                                   " <==================\n\n");
+    }
+
+
+//    @Disabled
+    @Test
+    public void findAll_v1() {
+
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
+
+        StepVerifier
+                .create(customerFlux)
+                .expectSubscription()
+                .expectNext(customer1,customer2)
                 .verifyComplete();
     }
 
 
     @Test
-    public void findAll() {
+    public void findAll_v2() {
+
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
+
         StepVerifier
-                .create(repo.findAll())
+                .create(customerFlux)
                 .expectSubscription()
                 .expectNextCount(2)
+                .verifyComplete();
+    }
+
+
+    @Test
+    public void findAll_v3() {
+
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
+
+        StepVerifier
+                .create(customerFlux)
+                .expectSubscription()
+                .expectNextMatches(customer -> customer1.getEmail()
+                                                        .equals(customer.getEmail()))
+                .expectNextMatches(customer -> customer2.getEmail()
+                                                        .equals(customer.getEmail()))
+                .verifyComplete();
+    }
+
+
+    @Test
+    public void save() {
+        cleanDbToTest();
+
+        StepVerifier
+                .create(repo.save(customer1))
+                .expectSubscription()
+                .expectNext(customer1)
                 .verifyComplete();
     }
 
@@ -93,33 +142,14 @@ public class ComposeRepo extends ConfigComposeTests {
                 .expectSubscription()
                 .verifyComplete();
 
+        Flux<Customer> fluxTest = repo.findAll();
+
         StepVerifier
-                .create(repo.findAll())
+                .create(fluxTest)
                 .expectSubscription()
                 .expectNextCount(0)
                 .verifyComplete();
 
-    }
-
-
-    @Test
-    public void findAllNextMatches() {
-        StepVerifier
-                .create(repo.findAll())
-                .expectNextMatches(u -> u.getId()
-                                         .equals(cust1.getId()))
-                .expectComplete();
-    }
-
-
-    @Test
-    public void findAllNext() {
-
-        StepVerifier
-                .create(repo.findAll())
-                .expectNext(cust1)
-                .expectNext(cust2)
-                .expectComplete();
     }
 
 
@@ -135,9 +165,9 @@ public class ComposeRepo extends ConfigComposeTests {
                       .schedule(task);
 
             task.get(10,TimeUnit.SECONDS);
-            Assert.fail("should fail");
+            Assertions.fail("should fail");
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            Assert.assertTrue("detected",e.getCause() instanceof BlockingOperationError);
+            Assertions.assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
         }
     }
 }
