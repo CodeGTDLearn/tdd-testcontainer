@@ -12,13 +12,13 @@ import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoCo
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.blockhound.BlockHound;
 
 import java.io.File;
 
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
 
 /*------------------------------------------------------------
                          DataMongoTest
@@ -30,7 +30,7 @@ b) USO ALTERNATIVO (DataMongoTest/SpringBootTest) - CONFLITAM ENTRE-SI:
  - @SpringBootTest(webEnvironment = RANDOM_PORT)
   ------------------------------------------------------------*/
 @DataMongoTest(excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class)
-@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
+@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 @Slf4j
 @Testcontainers
 public class ConfigComposeTests {
@@ -44,14 +44,15 @@ public class ConfigComposeTests {
     final private String SERVICE_DB = "db";
 
 
-//    @Container //Annotacao deve ficar na classe receptora
+    //    @Container //Annotacao deve ficar na classe receptora
     public DockerComposeContainer<?> compose =
             new DockerComposeContainer<>(new File(COMPOSE_PATH))
                     .withExposedService(
                             SERVICE_DB,
                             SERVICE_DB_PORT
                                        )
-    ;
+//                    .waitingFor(SERVICE_DB)
+            ;
 
 
     @BeforeAll

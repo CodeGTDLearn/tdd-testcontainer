@@ -4,10 +4,7 @@ import com.github.javafaker.Faker;
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerService;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.containers.DockerComposeContainer;
@@ -15,6 +12,7 @@ import org.testcontainers.junit.jupiter.Container;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
+import reactor.test.StepVerifier;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -25,17 +23,20 @@ import java.util.concurrent.TimeoutException;
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithIdAndName;
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.http.HttpStatus.*;
 
 public class ComposeController extends ConfigControllerTests {
 
+    private List<Customer> customerList;
+    private Customer customerWithId;
+    final String REQ_MAP = "/customer";
+
+
     @Container
     private static final DockerComposeContainer<?> compose = new ConfigComposeTests().compose;
 
-    private Customer customerWithId;
 
     // MOCKED-SERVER: WEB-TEST-CLIENT(non-blocking client)'
     // SHOULD BE USED WITH 'TEST-CONTAINERS'
@@ -43,10 +44,9 @@ public class ComposeController extends ConfigControllerTests {
     @Autowired
     WebTestClient mockedWebClient;
 
+
     @Autowired
     private ICustomerService service;
-
-    final String REQ_MAP = "/customer";
 
 
     @BeforeAll
@@ -57,14 +57,12 @@ public class ComposeController extends ConfigControllerTests {
 
     @AfterAll
     static void afterAll() {
-        compose.close();
         ConfigComposeTests.afterAll();
     }
 
 
     @BeforeEach
     public void setUpLocal() {
-
         //REAL-SERVER INJECTED IN WEB-TEST-CLIENT(non-blocking client)'
         //SHOULD BE USED WHEN 'DOCKER-COMPOSE' UP A REAL-WEB-SERVER
         //BECAUSE THERE IS 'REAL-SERVER' CREATED VIA DOCKER-COMPOSE
@@ -76,40 +74,45 @@ public class ComposeController extends ConfigControllerTests {
                                                     .idNumber()
                                                     .valid()).create();
 
-        List<Customer> customerList = asList(customerWithName().create(),
-                                             customerWithName().create(),
-                                             customerWithName().create(),
-                                             customerWithId
-                                            );
-
-        service.deleteAll()
-               .thenMany(Flux.fromIterable(customerList))
-               .flatMap(service::save)
-               .doOnNext((item -> System.out.println("Inserted item is - TEST: " + item)))
-               .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
+        customerList = asList(
+                customerWithName().create(),
+                customerWithId
+                             );
     }
 
 
-    @Test
-    public void save() {
-        RestAssuredWebTestClient
-                .given()
-                .webTestClient(mockedWebClient)
-                //                .header("Accept",CONT_ANY)
-                //                .header("Content-type",CONT_JSON)
-                .body(customerWithId)
+    void cleanDbToTest() {
+        StepVerifier
+                .create(service.deleteAll())
+                .expectSubscription()
+                .verifyComplete();
 
-                .when()
-                .post(REQ_MAP)
-
-                .then()
-                .statusCode(CREATED.value())
-        ;
+        System.out.println("\n\n==================> CLEAN-DB-TO-TEST" +
+                                   " <==================\n\n");
     }
 
 
+    private void StepVerifierCountCostumerFlux(Flux<Customer> customerFlux,int totalFluxElements) {
+        StepVerifier
+                .create(customerFlux)
+                .expectSubscription()
+                .expectNextCount(totalFluxElements)
+                .verifyComplete();
+    }
+
+
+    //    @Disabled
     @Test
     public void findAll() {
+
+        final Flux<Customer> customerFlux =
+                service.deleteAll()
+                       .thenMany(Flux.fromIterable(customerList))
+                       .flatMap(service::save)
+                       .doOnNext(item -> service.findAll());
+
+        StepVerifierCountCostumerFlux(customerFlux,2);
+
         RestAssuredWebTestClient
                 .given()
                 .webTestClient(mockedWebClient)
@@ -132,7 +135,38 @@ public class ComposeController extends ConfigControllerTests {
 
 
     @Test
+    public void save() {
+        cleanDbToTest();
+
+        RestAssuredWebTestClient
+                .given()
+                .webTestClient(mockedWebClient)
+                //                .header("Accept",CONT_ANY)
+                //                .header("Content-type",CONT_JSON)
+                .body(customerWithId)
+
+                .when()
+                .post(REQ_MAP)
+
+                .then()
+                .statusCode(CREATED.value())
+                .body("id",containsStringIgnoringCase(customerWithId.getId()))
+        ;
+    }
+
+
+    @Test
     public void deleteAll() {
+        cleanDbToTest();
+
+        StepVerifier
+                .create(service.save(customerWithId))
+                .expectSubscription()
+                .expectNext(customerWithId)
+                .verifyComplete();
+
+        StepVerifierCountCostumerFlux(service.findAll(),1);
+
         RestAssuredWebTestClient
                 .given()
                 .webTestClient(mockedWebClient)
@@ -144,6 +178,7 @@ public class ComposeController extends ConfigControllerTests {
                 .statusCode(NO_CONTENT.value())
         ;
 
+        StepVerifierCountCostumerFlux(service.findAll(),0);
     }
 
 
@@ -159,9 +194,9 @@ public class ComposeController extends ConfigControllerTests {
                       .schedule(task);
 
             task.get(10,TimeUnit.SECONDS);
-            fail("should fail");
+            Assertions.fail("should fail");
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
+            Assertions.assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
         }
     }
 }
