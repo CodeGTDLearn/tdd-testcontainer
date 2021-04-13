@@ -4,7 +4,6 @@ import com.testcontainer.api.Customer;
 import com.testcontainer.api.CustomerService;
 import com.testcontainer.api.ICustomerRepo;
 import com.testcontainer.api.ICustomerService;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testcontainers.containers.DockerComposeContainer;
@@ -28,6 +27,7 @@ public class ComposeService extends ConfigComposeTests {
 
     private Customer customer1;
     private Customer customer2;
+    private Customer customer3;
     private List<Customer> customerList;
 
     @Container
@@ -61,13 +61,14 @@ public class ComposeService extends ConfigComposeTests {
 
         customer1 = customerWithName().create();
         customer2 = customerWithName().create();
+        customer3 = customerWithName().create();
         customerList = Arrays.asList(customer1,customer2);
     }
 
 
     void cleanDbToTest() {
         StepVerifier
-                .create(repo.deleteAll())
+                .create(service.deleteAll())
                 .expectSubscription()
                 .verifyComplete();
 
@@ -77,7 +78,18 @@ public class ComposeService extends ConfigComposeTests {
 
 
     @Test
-    public void save() {
+    void checkServices() {
+
+        super.checkTestcontainerComposeService(
+                compose,
+                ConfigComposeTests.SERVICE,
+                ConfigComposeTests.SERVICE_PORT
+                                              );
+    }
+
+
+    @Test
+    public void save_obj() {
         cleanDbToTest();
 
         Mono<Customer> customerMono = service.save(customer1);
@@ -91,7 +103,7 @@ public class ComposeService extends ConfigComposeTests {
 
 
     @Test
-    public void deleteAll() {
+    public void deleteAll_count() {
 
         StepVerifier
                 .create(service.deleteAll())
@@ -109,7 +121,7 @@ public class ComposeService extends ConfigComposeTests {
 
 
     @Test
-    public void findAll() {
+    public void find_obj_1() {
 
         final Flux<Customer> customerFlux =
                 service.deleteAll()
@@ -129,7 +141,24 @@ public class ComposeService extends ConfigComposeTests {
 
 
     @Test
-    public void findAll_Count() {
+    public void find_obj_2() {
+
+        final Flux<Customer> customerFlux =
+                service.deleteAll()
+                       .thenMany(Flux.fromIterable(customerList))
+                       .flatMap(service::save)
+                       .doOnNext(item -> service.findAll());
+
+        StepVerifier
+                .create(customerFlux)
+                .expectNext(customer1)
+                .expectNext(customer2)
+                .verifyComplete();
+    }
+
+
+    @Test
+    public void find_count() {
 
         final Flux<Customer> customerFlux =
                 service.deleteAll()
@@ -146,7 +175,7 @@ public class ComposeService extends ConfigComposeTests {
 
 
     @Test
-    public void blockHoundWorks() {
+    public void bHWorks() {
         try {
             FutureTask<?> task = new FutureTask<>(() -> {
                 Thread.sleep(0);

@@ -2,10 +2,8 @@ package com.testcontainer.compose;
 
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerRepo;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import reactor.blockhound.BlockingOperationError;
@@ -26,6 +24,7 @@ public class ComposeRepo extends ConfigComposeTests {
 
     private Customer customer1;
     private Customer customer2;
+    private Customer customer3;
     private List<Customer> customerList;
 
 
@@ -53,7 +52,8 @@ public class ComposeRepo extends ConfigComposeTests {
     void setUp() {
         customer1 = customerWithName().create();
         customer2 = customerWithName().create();
-        customerList = Arrays.asList(customer1,customer2);
+        customer3 = customerWithName().create();
+        customerList = Arrays.asList(customer1,customer3);
     }
 
 
@@ -68,21 +68,72 @@ public class ComposeRepo extends ConfigComposeTests {
     }
 
 
-    @Disabled
     @Test
-    public void save() {
-        cleanDbToTest();
+    void checkServices() {
+
+        super.checkTestcontainerComposeService(
+                compose,
+                ConfigComposeTests.SERVICE,
+                ConfigComposeTests.SERVICE_PORT
+                                              );
+    }
+
+
+    @Test
+    @DisplayName("Find: Objects")
+    public void find_2() {
+
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
 
         StepVerifier
-                .create(repo.save(customer1))
-                .expectSubscription()
+                .create(customerFlux)
                 .expectNext(customer1)
+                .expectNext(customer3)
                 .verifyComplete();
     }
 
-    @Disabled
+
     @Test
-    public void deleteAll() {
+    @DisplayName("Find: Objects Content")
+    public void find_1() {
+
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
+
+        StepVerifier
+                .create(customerFlux)
+                .expectSubscription()
+                .expectNextMatches(customer -> customer1.getEmail()
+                                                        .equals(customer.getEmail()))
+                .expectNextMatches(customer -> customer3.getEmail()
+                                                        .equals(customer.getEmail()))
+                .verifyComplete();
+    }
+
+
+    @Test
+    @DisplayName("Save: Object")
+    public void save_obj() {
+        cleanDbToTest();
+
+        StepVerifier
+                .create(repo.save(customer2))
+                .expectSubscription()
+                .expectNext(customer2)
+                .verifyComplete();
+    }
+
+
+    @Test
+    @DisplayName("Delete: Count")
+    public void deleteAll_count() {
 
         StepVerifier
                 .create(repo.deleteAll())
@@ -99,36 +150,9 @@ public class ComposeRepo extends ConfigComposeTests {
     }
 
 
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     @Test
-    public void findAll() {
-// Problem found in the ComposeService as WELL
-        //PEsquisar Google: testcontainer intermittent OR testcontainers intermittent java.lang.AssertionError: expectation
-        // pesquisa: https://www.google.com/search?q=testcontainers+intermittent+java.lang.AssertionError:&sa=X&ved=2ahUKEwjIjJfO8e_vAhWyMn0KHVPlD4cQ7xYoAHoECAEQLw&biw=1162&bih=550
-        //https://www.google.com/search?q=testcontainer+intermittent&ei=lJhvYK7IIPjP0PEPvsi2wAI&oq=testcontainer+intermitten&gs_lcp=Cgdnd3Mtd2l6EAMYADIHCCEQChCgAToHCAAQRxCwA1CPkoEBWPWhgQFg_rGBAWgCcAJ4AIABdIgBigOSAQMzLjGYAQCgAQGqAQdnd3Mtd2l6yAEIwAEB&sclient=gws-wiz
-        //java.lang.AssertionError: expectation "expectNextMatches" failed (predicate failed on value: com.testcontainer.api.Customer@5aa418e8)
-
-        //java.lang.AssertionError: expectation "expectNextMatches" failed (predicate failed on value: com.testcontainer.api.Customer@590a0452)
-
-        final Flux<Customer> customerFlux =
-                repo.deleteAll()
-                    .thenMany(Flux.fromIterable(customerList))
-                    .flatMap(repo::save)
-                    .doOnNext(item -> repo.findAll());
-
-        StepVerifier
-                .create(customerFlux)
-                .expectSubscription()
-                .expectNextMatches(customer -> customer1.getEmail()
-                                                        .equals(customer.getEmail()))
-                .expectNextMatches(customer -> customer2.getEmail()
-                                                        .equals(customer.getEmail()))
-                .verifyComplete();
-    }
-
-
-    @Test
-    public void findAll_Count() {
+    @DisplayName("find: Count")
+    public void find_count() {
 
         final Flux<Customer> customerFlux =
                 repo.deleteAll()
@@ -144,9 +168,9 @@ public class ComposeRepo extends ConfigComposeTests {
     }
 
 
-    @Disabled
     @Test
-    public void blockHoundWorks() {
+    @DisplayName("BHWorks")
+    public void bHWorks() {
         try {
             FutureTask<?> task = new FutureTask<>(() -> {
                 Thread.sleep(0);

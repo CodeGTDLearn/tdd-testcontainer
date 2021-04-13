@@ -12,13 +12,19 @@ import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoCo
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.blockhound.BlockHound;
 
 import java.io.File;
 
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
+
+/*
+SPEED-UP TESTCONTAINERS
+https://callistaenterprise.se/blogg/teknik/2020/10/09/speed-up-your-testcontainers-tests/
+https://medium.com/vattenfall-tech/optimise-testcontainers-for-better-tests-performance-20a131d6003c
+https://medium.com/pictet-technologies-blog/speeding-up-your-integration-tests-with-testcontainers-e54ab655c03d
+ */
 
 /*------------------------------------------------------------
                          DataMongoTest
@@ -40,16 +46,16 @@ public class ConfigComposeTests {
 
 
     final private String COMPOSE_PATH = "src/test/resources/compose-testcontainers.yml";
-    final private int SERVICE_DB_PORT = 27017;
-    final private String SERVICE_DB = "db";
+    final static public int SERVICE_PORT = 27017;
+    final static public String SERVICE = "db";
 
 
     //    @Container //Annotacao deve ficar na classe receptora
     public DockerComposeContainer<?> compose =
             new DockerComposeContainer<>(new File(COMPOSE_PATH))
                     .withExposedService(
-                            SERVICE_DB,
-                            SERVICE_DB_PORT
+                            SERVICE,
+                            SERVICE_PORT
                                        )
 //                    .waitingFor(SERVICE_DB)
             ;
@@ -83,6 +89,21 @@ public class ConfigComposeTests {
     @AfterAll
     static void afterAll() {
         RestAssuredWebTestClient.reset();
+    }
+
+    public void checkTestcontainerComposeService(DockerComposeContainer<?> compose,String service,Integer port) {
+        String status =
+                "\nHost: " + compose.getServiceHost(service,port) +
+                        "\nPort: " + compose.getServicePort(service,port) +
+                        "\nCreated: " + compose.getContainerByServiceName(service + "_1")
+                                               .get()
+                                               .isCreated() +
+                        "\nRunning: " + compose.getContainerByServiceName(service + "_1")
+                                               .get()
+                                               .isRunning();
+
+        System.out.println(
+                "------------\n" + "SERVICE: " + service + status + "\n------------");
     }
 }
 

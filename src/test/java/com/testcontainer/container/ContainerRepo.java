@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ContainerRepo extends ConfigContainerTests {
 
-    private Customer cust1, cust2;
+    private Customer customer1;
+    private Customer customer2;
+    private Customer customer3;
     private List<Customer> customerList;
 
     @Autowired
@@ -43,22 +45,21 @@ public class ContainerRepo extends ConfigContainerTests {
 
     @BeforeEach
     void setUp() {
-        cust1 = customerWithName().create();
-        cust2 = customerWithName().create();
-
-        customerList = Arrays.asList(cust1,cust2);
-
-        repo.deleteAll()
-            .thenMany(Flux.fromIterable(customerList))
-            .flatMap(repo::save)
-            .doOnNext(item -> System.out.println(" Inserted item is: " + item))
-            .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
+        customer1 = customerWithName().create();
+        customer2 = customerWithName().create();
+        customer3 = customerWithName().create();
+        customerList = Arrays.asList(customer1,customer3);
     }
 
 
-    @AfterEach
-    void tearDown() {
-        repo.deleteAll();
+    private void cleanDbToTest() {
+        StepVerifier
+                .create(repo.deleteAll())
+                .expectSubscription()
+                .verifyComplete();
+
+        System.out.println("\n\n==================> CLEAN-DB-TO-TEST" +
+                                   " <==================\n\n");
     }
 
 
@@ -69,56 +70,93 @@ public class ContainerRepo extends ConfigContainerTests {
 
 
     @Test
-    public void save() {
+    @DisplayName("Save: Object")
+    public void save_obj() {
+        cleanDbToTest();
+
         StepVerifier
-                .create(repo.save(cust1))
+                .create(repo.save(customer2))
                 .expectSubscription()
-                .expectNext(cust1)
+                .expectNext(customer2)
                 .verifyComplete();
     }
 
 
     @Test
-    public void findAll() {
+    @DisplayName("find: Count")
+    public void find_count() {
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
+
         StepVerifier
-                .create(repo.findAll())
+                .create(customerFlux)
                 .expectSubscription()
-                .expectNextCount(customerList.toArray().length)
+                .expectNextCount(2)
+                .verifyComplete();
+
+        //        StepVerifier
+        //                .create(repo.findAll())
+        //                .expectSubscription()
+        //                .expectNextCount(customerList.toArray().length)
+        //                .verifyComplete();
+    }
+
+
+    @Test
+    @DisplayName("Find: Objects Content")
+    public void find_1() {
+
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
+
+        StepVerifier
+                .create(customerFlux)
+                .expectSubscription()
+                .expectNextMatches(customer -> customer1.getEmail()
+                                                        .equals(customer.getEmail()))
+                .expectNextMatches(customer -> customer3.getEmail()
+                                                        .equals(customer.getEmail()))
                 .verifyComplete();
     }
 
 
     @Test
-    public void findAllNextMatches() {
+    @DisplayName("Find: Objects")
+    public void find_2() {
+
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
+
         StepVerifier
-                .create(repo.findAll())
-                .expectNextMatches(u -> u.getId()
-                                         .equals(cust1.getId()))
-                .expectComplete();
+                .create(customerFlux)
+                .expectNext(customer1)
+                .expectNext(customer3)
+                .verifyComplete();
     }
 
 
     @Test
-    public void findAllNext() {
-
-        StepVerifier
-                .create(repo.findAll())
-                .expectNext(cust1)
-                .expectNext(cust2)
-                .expectComplete();
-    }
-
-
-    @Test
-    public void deleteAll() {
+    @DisplayName("Delete: Count")
+    public void deleteAll_count() {
 
         StepVerifier
                 .create(repo.deleteAll())
                 .expectSubscription()
                 .verifyComplete();
 
+        Flux<Customer> fluxTest = repo.findAll();
+
         StepVerifier
-                .create(repo.findAll())
+                .create(fluxTest)
                 .expectSubscription()
                 .expectNextCount(0)
                 .verifyComplete();
@@ -127,7 +165,8 @@ public class ContainerRepo extends ConfigContainerTests {
 
 
     @Test
-    public void blockHoundWorks() {
+    @DisplayName("BHWorks")
+    public void bHWorks() {
         try {
             FutureTask<?> task = new FutureTask<>(() -> {
                 Thread.sleep(0);
@@ -138,9 +177,9 @@ public class ContainerRepo extends ConfigContainerTests {
                       .schedule(task);
 
             task.get(10,TimeUnit.SECONDS);
-            fail("should fail");
+            Assertions.fail("should fail");
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
+            Assertions.assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
         }
     }
 }

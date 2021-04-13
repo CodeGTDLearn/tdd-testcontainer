@@ -16,11 +16,12 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
 @AutoConfigureWebTestClient
 @SpringBootTest(webEnvironment = RANDOM_PORT)
-@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
+@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 @Slf4j
 @Testcontainers
 public class ConfigControllerTests {

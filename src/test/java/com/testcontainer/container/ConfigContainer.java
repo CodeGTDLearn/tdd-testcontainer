@@ -8,9 +8,11 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
-@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
+//@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
+@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 @Slf4j
 @Testcontainers
 public class ConfigContainer {
@@ -23,9 +25,9 @@ public class ConfigContainer {
         registry.add("spring.data.mongodb.uri",container::getReplicaSetUrl);
     }
 
-    static void closingContainer(){
-        container.close();
-    }
+//    static void closingContainer(){
+//        container.close();
+//    }
 
 }
 

@@ -5,10 +5,7 @@ import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerService;
 import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,8 +15,8 @@ import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.test.StepVerifier;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -28,10 +25,11 @@ import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithIdAndName;
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
+import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.*;
 
@@ -40,7 +38,7 @@ import static org.springframework.http.HttpStatus.*;
 public class ContainerController extends ConfigContainer {
 
     private List<Customer> customerList;
-    private Customer customerWithId1, customerWithId2;
+    private Customer customerWithId;
 
     //MOCKED-SERVER: WEB-TEST-CLIENT(non-blocking client)'
     //SHOULD BE USED WITH 'TEST-CONTAINERS'
@@ -51,8 +49,8 @@ public class ContainerController extends ConfigContainer {
     @Autowired
     private ICustomerService service;
 
-//    final ContentType CONT_ANY = ContentType.ANY;
-//    final ContentType CONT_JSON = ContentType.JSON;
+    //    final ContentType CONT_ANY = ContentType.ANY;
+    //    final ContentType CONT_JSON = ContentType.JSON;
     final String REQ_MAP = "/customer";
 
 
@@ -70,90 +68,112 @@ public class ContainerController extends ConfigContainer {
 
     @BeforeEach
     public void setUpLocal() {
-
         //REAL-SERVER INJECTED IN WEB-TEST-CLIENT(non-blocking client)'
         //SHOULD BE USED WHEN 'DOCKER-COMPOSE' UP A REAL-WEB-SERVER
         //BECAUSE THERE IS 'REAL-SERVER' CREATED VIA DOCKER-COMPOSE
         // realWebClient = WebTestClient.bindToServer()
         //                      .baseUrl("http://localhost:8080/customer")
         //                      .build();
-        customerWithId1 = customerWithIdAndName(Faker.instance()
-                                                     .idNumber()
-                                                     .valid()).create();
 
-        customerWithId2 = customerWithIdAndName(Faker.instance()
-                                                     .idNumber()
-                                                     .valid()).create();
+        customerWithId = customerWithIdAndName(Faker.instance()
+                                                    .idNumber()
+                                                    .valid()).create();
 
-        customerList = Arrays.asList(customerWithName().create(),
-                                     customerWithName().create(),
-                                     customerWithId1,
-                                     customerWithId2
-                                    );
+        customerList = asList(
+                customerWithName().create(),
+                customerWithId
+                             );
+    }
 
 
-        service.deleteAll()
-               .thenMany(Flux.fromIterable(customerList))
-               .flatMap(service::save)
-               .doOnNext((item -> System.out.println("Inserted item is - TEST: " + item)))
-               .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
+    private void cleanDbToTest() {
+        StepVerifier
+                .create(service.deleteAll())
+                .expectSubscription()
+                .verifyComplete();
+
+        System.out.println("\n\n==================> CLEAN-DB-TO-TEST" +
+                                   " <==================\n\n");
+    }
+
+
+    private void StepVerifierCountCostumerFlux(Flux<Customer> flux,int totalElements) {
+        StepVerifier
+                .create(flux)
+                .expectSubscription()
+                .expectNextCount(totalElements)
+                .verifyComplete();
     }
 
 
     @Test
-    public void saveWebTestClient() {
+    void checkContainer() {
+        assertTrue(container.isRunning());
+    }
 
-        final MediaType MTYPE_JSON = MediaType.APPLICATION_JSON;
+
+    @Test
+    public void save_WebTestClient() {
 
         mockedWebClient
                 .post()
                 .uri(REQ_MAP)
-                .body(Mono.just(customerWithId1),Customer.class)
+                .body(Mono.just(customerWithId),Customer.class)
                 .exchange()
                 .expectStatus()
                 .isCreated()
                 .expectHeader()
-                .contentType(MTYPE_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
                 .jsonPath("$.id")
-                .isEqualTo(customerWithId1.getId())
+                .isEqualTo(customerWithId.getId())
                 .jsonPath("$.email")
-                .isEqualTo(customerWithId1.getEmail())
+                .isEqualTo(customerWithId.getEmail())
                 .jsonPath("$.rating")
-                .isEqualTo(customerWithId1.getRating())
+                .isEqualTo(customerWithId.getRating())
         ;
     }
 
 
     @Test
-    public void save() {
+    public void save_RA() {
+        cleanDbToTest();
+
         RestAssuredWebTestClient
                 .given()
                 .webTestClient(mockedWebClient)
-                //                .header("Accept",CONT_ANY)
-                //                .header("Content-type",CONT_JSON)
-                .body(customerWithId1)
+                .header("Accept",ContentType.ANY)
+                .header("Content-type",ContentType.JSON)
+                .body(customerWithId)
 
                 .when()
                 .post(REQ_MAP)
 
                 .then()
-                .log()
-                .headers()
-                .and()
-                .log()
-                .body()
-                .and()
-                //                .contentType(CONT_JSON)
                 .statusCode(CREATED.value())
+                .and()
+                .body("id",containsStringIgnoringCase(customerWithId.getId()))
+                .and()
+                .body("email",containsStringIgnoringCase(customerWithId.getEmail()))
+                .and()
+                .body("rating",is(customerWithId.getRating()))
+        ;
 
-                //equalTo para o corpo do Json
-                .body("email",containsString(customerWithId1.getEmail()));
+        StepVerifierCountCostumerFlux(service.findAll(),1);
     }
 
 
     @Test
-    public void findAll() {
+    public void find() {
+
+        final Flux<Customer> customerFlux =
+                service.deleteAll()
+                       .thenMany(Flux.fromIterable(customerList))
+                       .flatMap(service::save)
+                       .doOnNext(item -> service.findAll());
+
+        StepVerifierCountCostumerFlux(customerFlux,2);
+
         RestAssuredWebTestClient
                 .given()
                 .webTestClient(mockedWebClient)
@@ -170,13 +190,25 @@ public class ContainerController extends ConfigContainer {
                 .body()
                 .and()
 
-                .body("id",hasItem(customerWithId1.getId()))
+                .body("size()",is(2))
+                .and()
+                .body("id",hasItem(customerWithId.getId()))
         ;
     }
 
 
     @Test
     public void deleteAll() {
+        cleanDbToTest();
+
+        StepVerifier
+                .create(service.save(customerWithId))
+                .expectSubscription()
+                .expectNext(customerWithId)
+                .verifyComplete();
+
+        StepVerifierCountCostumerFlux(service.findAll(),1);
+
         RestAssuredWebTestClient
                 .given()
                 .webTestClient(mockedWebClient)
@@ -188,11 +220,12 @@ public class ContainerController extends ConfigContainer {
                 .statusCode(NO_CONTENT.value())
         ;
 
+        StepVerifierCountCostumerFlux(service.findAll(),0);
     }
 
 
     @Test
-    public void blockHoundWorks() {
+    public void bHWorks() {
         try {
             FutureTask<?> task = new FutureTask<>(() -> {
                 Thread.sleep(0);
@@ -203,9 +236,9 @@ public class ContainerController extends ConfigContainer {
                       .schedule(task);
 
             task.get(10,TimeUnit.SECONDS);
-            fail("should fail");
+            Assertions.fail("should fail");
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
+            Assertions.assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
         }
     }
 }

@@ -3,14 +3,17 @@ package com.testcontainer.compose;
 import com.github.javafaker.Faker;
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerService;
+import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
@@ -25,6 +28,7 @@ import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.http.HttpStatus.*;
 
 public class ComposeController extends ConfigControllerTests {
@@ -92,18 +96,28 @@ public class ComposeController extends ConfigControllerTests {
     }
 
 
-    private void StepVerifierCountCostumerFlux(Flux<Customer> customerFlux,int totalFluxElements) {
+    private void StepVerifierCountCostumerFlux(Flux<Customer> flux,int totalElements) {
         StepVerifier
-                .create(customerFlux)
+                .create(flux)
                 .expectSubscription()
-                .expectNextCount(totalFluxElements)
+                .expectNextCount(totalElements)
                 .verifyComplete();
     }
 
 
-    //    @Disabled
     @Test
-    public void findAll() {
+    void checkServices() {
+
+        new ConfigComposeTests().checkTestcontainerComposeService(
+                compose,
+                ConfigComposeTests.SERVICE,
+                ConfigComposeTests.SERVICE_PORT
+                                                                 );
+    }
+
+
+    @Test
+    public void find() {
 
         final Flux<Customer> customerFlux =
                 service.deleteAll()
@@ -129,20 +143,22 @@ public class ComposeController extends ConfigControllerTests {
                 .body()
                 .and()
 
+                .body("size()",is(2))
+                .and()
                 .body("id",hasItem(customerWithId.getId()))
         ;
     }
 
 
     @Test
-    public void save() {
+    public void save_RA() {
         cleanDbToTest();
 
         RestAssuredWebTestClient
                 .given()
                 .webTestClient(mockedWebClient)
-                //                .header("Accept",CONT_ANY)
-                //                .header("Content-type",CONT_JSON)
+                .header("Accept",ContentType.ANY)
+                .header("Content-type",ContentType.JSON)
                 .body(customerWithId)
 
                 .when()
@@ -150,7 +166,37 @@ public class ComposeController extends ConfigControllerTests {
 
                 .then()
                 .statusCode(CREATED.value())
+                .and()
                 .body("id",containsStringIgnoringCase(customerWithId.getId()))
+                .and()
+                .body("email",containsStringIgnoringCase(customerWithId.getEmail()))
+                .and()
+                .body("rating",is(customerWithId.getRating()))
+        ;
+
+        StepVerifierCountCostumerFlux(service.findAll(),1);
+    }
+
+
+    @Test
+    public void save_WebTestClient() {
+
+        mockedWebClient
+                .post()
+                .uri(REQ_MAP)
+                .body(Mono.just(customerWithId),Customer.class)
+                .exchange()
+                .expectStatus()
+                .isCreated()
+                .expectHeader()
+                .contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$.id")
+                .isEqualTo(customerWithId.getId())
+                .jsonPath("$.email")
+                .isEqualTo(customerWithId.getEmail())
+                .jsonPath("$.rating")
+                .isEqualTo(customerWithId.getRating())
         ;
     }
 
@@ -183,7 +229,7 @@ public class ComposeController extends ConfigControllerTests {
 
 
     @Test
-    public void blockHoundWorks() {
+    public void bHWorks() {
         try {
             FutureTask<?> task = new FutureTask<>(() -> {
                 Thread.sleep(0);

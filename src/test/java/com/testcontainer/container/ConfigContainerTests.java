@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.annotation.DirtiesContext;
+import reactor.blockhound.BlockHound;
 
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
@@ -31,11 +32,15 @@ public class ConfigContainerTests extends ConfigContainer {
     final private static Long MAX_TIMEOUT = 15000L;
     final static ContentType JSON_CONTENT_TYPE = ContentType.JSON;
 
+
     @BeforeAll
     static void beforeAll() {
-        //        BlockHound.install(
-        //builder -> builder.allowBlockingCallsInside("java.util.UUID" ,"randomUUID")
-        //                          );
+        BlockHound.install(
+                builder -> builder
+                        .allowBlockingCallsInside("java.io.PrintStream",
+                                                  "write"
+                                                 )
+                          );
 
         //DEFINE CONFIG-GLOBAL PARA OS REQUESTS DOS TESTES
         RestAssuredWebTestClient.requestSpecification =
@@ -55,7 +60,7 @@ public class ConfigContainerTests extends ConfigContainer {
 
     @AfterAll
     static void afterAll() {
-        ConfigContainer.closingContainer();
+//        ConfigContainer.closingContainer();
         RestAssuredWebTestClient.reset();
     }
 }
