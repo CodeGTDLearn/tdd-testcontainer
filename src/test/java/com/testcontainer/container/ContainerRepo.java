@@ -32,13 +32,13 @@ public class ContainerRepo extends ConfigContainerTests {
 
 
     @BeforeAll
-    static void beforeAll() {
+    public static void beforeAll() {
         ConfigContainerTests.beforeAll();
     }
 
 
     @AfterAll
-    static void afterAll() {
+    public static void afterAll() {
         ConfigContainerTests.afterAll();
     }
 
@@ -96,12 +96,6 @@ public class ContainerRepo extends ConfigContainerTests {
                 .expectSubscription()
                 .expectNextCount(2)
                 .verifyComplete();
-
-        //        StepVerifier
-        //                .create(repo.findAll())
-        //                .expectSubscription()
-        //                .expectNextCount(customerList.toArray().length)
-        //                .verifyComplete();
     }
 
 

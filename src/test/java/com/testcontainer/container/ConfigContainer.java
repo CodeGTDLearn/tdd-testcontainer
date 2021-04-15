@@ -9,25 +9,31 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
-//@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
+/*
+SPEED-UP TESTCONTAINERS
+https://callistaenterprise.se/blogg/teknik/2020/10/09/speed-up-your-testcontainers-tests/
+https://medium.com/pictet-technologies-blog/speeding-up-your-integration-tests-with-testcontainers-e54ab655c03d
+ */
 @DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 @Slf4j
 @Testcontainers
 public class ConfigContainer {
 
+    /* SPEED UP 01: TEST-CONTAINERS
+        Containers declared as STATIC fields will be shared between test methods,
+        starting only once before any test method is executed and
+        stopped after the last test method has executed.
+        Containers declared as INSTANCE fields will be started and stopped for every test method.
+     */
     @Container
-    static MongoDBContainer container = new MongoDBContainer("mongo:4.4.2");
+    public static final MongoDBContainer container = new MongoDBContainer("mongo:4.4.2");
+
 
     @DynamicPropertySource
-    static void setProperties(DynamicPropertyRegistry registry) {
+    static void mongoProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri",container::getReplicaSetUrl);
     }
-
-//    static void closingContainer(){
-//        container.close();
-//    }
 
 }
 

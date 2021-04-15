@@ -29,7 +29,7 @@ b) USO ALTERNATIVO (DataMongoTest/SpringBootTest) - CONFLITAM ENTRE-SI:
 @Slf4j
 public class ConfigContainerTests extends ConfigContainer {
 
-    final private static Long MAX_TIMEOUT = 15000L;
+    final static Long MAX_TIMEOUT = 15000L;
     final static ContentType JSON_CONTENT_TYPE = ContentType.JSON;
 
 

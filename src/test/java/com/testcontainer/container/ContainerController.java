@@ -107,7 +107,7 @@ public class ContainerController extends ConfigContainer {
 
 
     @Test
-    void checkContainer() {
+    public static void checkContainer() {
         assertTrue(container.isRunning());
     }
 

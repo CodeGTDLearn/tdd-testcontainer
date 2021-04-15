@@ -22,7 +22,6 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER
 /*
 SPEED-UP TESTCONTAINERS
 https://callistaenterprise.se/blogg/teknik/2020/10/09/speed-up-your-testcontainers-tests/
-https://medium.com/vattenfall-tech/optimise-testcontainers-for-better-tests-performance-20a131d6003c
 https://medium.com/pictet-technologies-blog/speeding-up-your-integration-tests-with-testcontainers-e54ab655c03d
  */
 
@@ -50,7 +49,7 @@ public class ConfigComposeTests {
     final static public String SERVICE = "db";
 
 
-    //    @Container //Annotacao deve ficar na classe receptora
+    //@Container //Nao anotar aqui. Annotacao deve ficar na classe receptora
     public DockerComposeContainer<?> compose =
             new DockerComposeContainer<>(new File(COMPOSE_PATH))
                     .withExposedService(

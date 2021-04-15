@@ -98,7 +98,7 @@ public class ComposeRepo extends ConfigComposeTests {
 
 
     @Test
-    @DisplayName("Find: Objects Content")
+    @DisplayName("Find: Objs Content")
     public void find_1() {
 
         final Flux<Customer> customerFlux =
