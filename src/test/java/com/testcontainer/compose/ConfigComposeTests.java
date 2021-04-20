@@ -11,18 +11,18 @@ import org.junit.jupiter.api.BeforeAll;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.blockhound.BlockHound;
 
-import java.io.File;
-
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 
 /*
 SPEED-UP TESTCONTAINERS
 https://callistaenterprise.se/blogg/teknik/2020/10/09/speed-up-your-testcontainers-tests/
-https://medium.com/pictet-technologies-blog/speeding-up-your-integration-tests-with-testcontainers-e54ab655c03d
+https://medium.com/pictet-technologies-blog/speeding-up-your-integration-tests-with
+-testcontainers-e54ab655c03d
  */
 
 /*------------------------------------------------------------
@@ -35,29 +35,12 @@ b) USO ALTERNATIVO (DataMongoTest/SpringBootTest) - CONFLITAM ENTRE-SI:
  - @SpringBootTest(webEnvironment = RANDOM_PORT)
   ------------------------------------------------------------*/
 @DataMongoTest(excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class)
-@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 @Slf4j
-@Testcontainers
-public class ConfigComposeTests {
+public class ConfigComposeTests extends ConfigCompose {
 
     final private static Long MAX_TIMEOUT = 15000L;
     final private static ContentType API_CONTENT_TYPE = ContentType.JSON;
-
-
-    final private String COMPOSE_PATH = "src/test/resources/compose-testcontainers.yml";
-    final static public int SERVICE_PORT = 27017;
-    final static public String SERVICE = "db";
-
-
-    //@Container //Nao anotar aqui. Annotacao deve ficar na classe receptora
-    public DockerComposeContainer<?> compose =
-            new DockerComposeContainer<>(new File(COMPOSE_PATH))
-                    .withExposedService(
-                            SERVICE,
-                            SERVICE_PORT
-                                       )
-//                    .waitingFor(SERVICE_DB)
-            ;
 
 
     @BeforeAll
@@ -90,7 +73,9 @@ public class ConfigComposeTests {
         RestAssuredWebTestClient.reset();
     }
 
-    public void checkTestcontainerComposeService(DockerComposeContainer<?> compose,String service,Integer port) {
+
+    public void checkTestcontainerComposeService(DockerComposeContainer<?> compose,String service
+            ,Integer port) {
         String status =
                 "\nHost: " + compose.getServiceHost(service,port) +
                         "\nPort: " + compose.getServicePort(service,port) +

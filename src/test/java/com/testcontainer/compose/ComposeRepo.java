@@ -45,6 +45,7 @@ public class ComposeRepo extends ConfigComposeTests {
     @AfterAll
     static void afterAll() {
         ConfigComposeTests.afterAll();
+        compose.close();
     }
 
 
@@ -69,8 +70,7 @@ public class ComposeRepo extends ConfigComposeTests {
 
 
     @Test
-    void checkServices() {
-
+    public void checkServices() {
         super.checkTestcontainerComposeService(
                 compose,
                 ConfigComposeTests.SERVICE,

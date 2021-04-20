@@ -31,7 +31,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.http.HttpStatus.*;
 
-public class ComposeController extends ConfigControllerTests {
+public class ComposeController extends ConfigControllerCompose {
 
     private List<Customer> customerList;
     private Customer customerWithId;
@@ -62,6 +62,7 @@ public class ComposeController extends ConfigControllerTests {
     @AfterAll
     static void afterAll() {
         ConfigComposeTests.afterAll();
+        compose.close();
     }
 
 

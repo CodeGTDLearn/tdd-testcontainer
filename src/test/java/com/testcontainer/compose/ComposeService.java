@@ -48,6 +48,7 @@ public class ComposeService extends ConfigComposeTests {
     @AfterAll
     static void afterAll() {
         ConfigComposeTests.afterAll();
+        compose.close();
     }
 
 
