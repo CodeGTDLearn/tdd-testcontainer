@@ -1,4 +1,4 @@
-package com.testcontainer.container;
+package com.testcontainer.sharedContainer;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -13,7 +13,7 @@ https://medium.com/pictet-technologies-blog/speeding-up-your-integration-tests-w
 -testcontainers-e54ab655c03d
  */
 @Testcontainers
-public class ConfigContainer {
+public class SharedContainerConfig {
 
     /* SPEED UP 01: TEST-CONTAINERS
         Containers declared as STATIC fields will be shared between test methods,

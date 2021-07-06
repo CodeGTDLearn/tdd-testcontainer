@@ -1,4 +1,4 @@
-package com.testcontainer.compose;
+package com.testcontainer.sharedContainer;
 
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.http.ContentType;
@@ -11,19 +11,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.DockerComposeContainer;
 import reactor.blockhound.BlockHound;
 
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
-
-/*
-SPEED-UP TESTCONTAINERS
-https://callistaenterprise.se/blogg/teknik/2020/10/09/speed-up-your-testcontainers-tests/
-https://medium.com/pictet-technologies-blog/speeding-up-your-integration-tests-with
--testcontainers-e54ab655c03d
- */
 
 /*------------------------------------------------------------
                          DataMongoTest
@@ -37,15 +27,14 @@ b) USO ALTERNATIVO (DataMongoTest/SpringBootTest) - CONFLITAM ENTRE-SI:
 @DataMongoTest(excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class)
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 @Slf4j
-public class ConfigComposeTests extends ConfigCompose {
+public class ConfigTests extends SharedContainerConfig {
 
-    final private static Long MAX_TIMEOUT = 15000L;
-    final private static ContentType API_CONTENT_TYPE = ContentType.JSON;
+    final static Long MAX_TIMEOUT = 15000L;
+    final static ContentType JSON_CONTENT_TYPE = ContentType.JSON;
 
 
     @BeforeAll
     static void beforeAll() {
-
         BlockHound.install(
                 builder -> builder
                         .allowBlockingCallsInside("java.io.PrintStream",
@@ -56,8 +45,9 @@ public class ConfigComposeTests extends ConfigCompose {
         //DEFINE CONFIG-GLOBAL PARA OS REQUESTS DOS TESTES
         RestAssuredWebTestClient.requestSpecification =
                 new WebTestClientRequestSpecBuilder()
-                        .setContentType(API_CONTENT_TYPE)
+                        .setContentType(JSON_CONTENT_TYPE)
                         .build();
+
 
         //DEFINE CONFIG-GLOBAL PARA OS RESPONSE DOS TESTES
         RestAssuredWebTestClient.responseSpecification =
@@ -70,24 +60,8 @@ public class ConfigComposeTests extends ConfigCompose {
 
     @AfterAll
     static void afterAll() {
+        //        ConfigContainer.closingContainer();
         RestAssuredWebTestClient.reset();
-    }
-
-
-    public void checkTestcontainerComposeService(DockerComposeContainer<?> compose,String service
-            ,Integer port) {
-        String status =
-                "\nHost: " + compose.getServiceHost(service,port) +
-                        "\nPort: " + compose.getServicePort(service,port) +
-                        "\nCreated: " + compose.getContainerByServiceName(service + "_1")
-                                               .get()
-                                               .isCreated() +
-                        "\nRunning: " + compose.getContainerByServiceName(service + "_1")
-                                               .get()
-                                               .isRunning();
-
-        System.out.println(
-                "------------\n" + "SERVICE: " + service + status + "\n------------");
     }
 }
 

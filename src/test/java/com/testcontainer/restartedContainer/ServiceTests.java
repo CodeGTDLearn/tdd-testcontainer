@@ -1,11 +1,14 @@
-package com.testcontainer.container;
+package com.testcontainer.restartedContainer;
 
 import com.testcontainer.api.Customer;
+import com.testcontainer.api.CustomerService;
 import com.testcontainer.api.ICustomerRepo;
+import com.testcontainer.api.ICustomerService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
@@ -17,10 +20,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
-import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ContainerRepo extends ConfigContainerTests {
+public class ServiceTests extends ConfigTests {
 
     private Customer customer1;
     private Customer customer2;
@@ -29,32 +31,55 @@ public class ContainerRepo extends ConfigContainerTests {
 
     @Autowired
     private ICustomerRepo repo;
+    private ICustomerService service;
 
 
     @BeforeAll
-    public static void beforeAll() {
-        ConfigContainerTests.beforeAll();
+    static void beforeAll() {
+        ConfigTests.beforeAll();
     }
 
 
     @AfterAll
-    public static void afterAll() {
-        ConfigContainerTests.afterAll();
+    static void afterAll() {
+        ConfigTests.afterAll();
     }
 
 
     @BeforeEach
     void setUp() {
+        //------------------------------------------//
+        //VERY IMPORTANT!!!!
+        //DEPENDENCY INJECTION MUST BE DONE MANUALLY
+        service = new CustomerService(repo);
+        //------------------------------------------//
+
         customer1 = customerWithName().create();
         customer2 = customerWithName().create();
         customer3 = customerWithName().create();
-        customerList = Arrays.asList(customer1,customer3);
+        customerList = Arrays.asList(customer1,customer2);
+
+        //        //------------------------------------------//
+        //        //VERY IMPORTANT!!!!
+        //        //DEPENDENCY INJECTION MUST BE DONE MANUALLY
+        //        service = new CustomerService(repo);
+        //        //------------------------------------------//
+        //
+        //        customer1 = customerWithName().create();
+        //        customer2 = customerWithName().create();
+        //        List<Customer> customerList = Arrays.asList(customer1,customer2);
+        //
+        //        service.deleteAll()
+        //               .thenMany(Flux.fromIterable(customerList))
+        //               .flatMap(service::save)
+        //               .doOnNext(item -> System.out.println(" Inserted item is: " + item))
+        //               .blockLast(); // THATS THE WHY, BLOCKHOUND IS NOT BEING USED.
     }
 
 
     private void cleanDbToTest() {
         StepVerifier
-                .create(repo.deleteAll())
+                .create(service.deleteAll())
                 .expectSubscription()
                 .verifyComplete();
 
@@ -70,26 +95,27 @@ public class ContainerRepo extends ConfigContainerTests {
 
 
     @Test
-    @DisplayName("Save: Object")
     public void save_obj() {
         cleanDbToTest();
 
+        Mono<Customer> customerMono = service.save(customer3);
+
         StepVerifier
-                .create(repo.save(customer2))
+                .create(customerMono)
                 .expectSubscription()
-                .expectNext(customer2)
+                .expectNext(customer3)
                 .verifyComplete();
     }
 
 
     @Test
-    @DisplayName("find: Count")
     public void find_count() {
+
         final Flux<Customer> customerFlux =
-                repo.deleteAll()
-                    .thenMany(Flux.fromIterable(customerList))
-                    .flatMap(repo::save)
-                    .doOnNext(item -> repo.findAll());
+                service.deleteAll()
+                       .thenMany(Flux.fromIterable(customerList))
+                       .flatMap(service::save)
+                       .doOnNext(item -> service.findAll());
 
         StepVerifier
                 .create(customerFlux)
@@ -100,66 +126,61 @@ public class ContainerRepo extends ConfigContainerTests {
 
 
     @Test
-    @DisplayName("Find: Objects Content")
-    public void find_1() {
+    public void find_obj_1() {
 
         final Flux<Customer> customerFlux =
-                repo.deleteAll()
-                    .thenMany(Flux.fromIterable(customerList))
-                    .flatMap(repo::save)
-                    .doOnNext(item -> repo.findAll());
+                service.deleteAll()
+                       .thenMany(Flux.fromIterable(customerList))
+                       .flatMap(service::save)
+                       .doOnNext(item -> service.findAll());
 
         StepVerifier
                 .create(customerFlux)
                 .expectSubscription()
                 .expectNextMatches(customer -> customer1.getEmail()
                                                         .equals(customer.getEmail()))
-                .expectNextMatches(customer -> customer3.getEmail()
+                .expectNextMatches(customer -> customer2.getEmail()
                                                         .equals(customer.getEmail()))
                 .verifyComplete();
     }
 
 
     @Test
-    @DisplayName("Find: Objects")
-    public void find_2() {
+    public void find_obj_2() {
 
         final Flux<Customer> customerFlux =
-                repo.deleteAll()
-                    .thenMany(Flux.fromIterable(customerList))
-                    .flatMap(repo::save)
-                    .doOnNext(item -> repo.findAll());
+                service.deleteAll()
+                       .thenMany(Flux.fromIterable(customerList))
+                       .flatMap(service::save)
+                       .doOnNext(item -> service.findAll());
 
         StepVerifier
                 .create(customerFlux)
                 .expectNext(customer1)
-                .expectNext(customer3)
+                .expectNext(customer2)
                 .verifyComplete();
     }
 
 
     @Test
-    @DisplayName("Delete: Count")
     public void deleteAll_count() {
 
         StepVerifier
-                .create(repo.deleteAll())
+                .create(service.deleteAll())
                 .expectSubscription()
                 .verifyComplete();
 
-        Flux<Customer> fluxTest = repo.findAll();
+        Flux<Customer> fluxTest = service.findAll();
 
         StepVerifier
                 .create(fluxTest)
                 .expectSubscription()
                 .expectNextCount(0)
                 .verifyComplete();
-
     }
 
 
     @Test
-    @DisplayName("BHWorks")
     public void bHWorks() {
         try {
             FutureTask<?> task = new FutureTask<>(() -> {

@@ -1,11 +1,9 @@
-package com.testcontainer.compose;
+package com.testcontainer.sharedContainer;
 
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerRepo;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.junit.jupiter.Container;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -19,33 +17,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
+import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ComposeRepo extends ConfigComposeTests {
+public class RepoTests extends ConfigTests {
 
     private Customer customer1;
     private Customer customer2;
     private Customer customer3;
     private List<Customer> customerList;
 
-
-    @Container
-    private static final DockerComposeContainer<?> compose = new ConfigComposeTests().compose;
-
-
     @Autowired
     private ICustomerRepo repo;
 
 
     @BeforeAll
-    static void beforeAll() {
-        ConfigComposeTests.beforeAll();
+    public static void beforeAll() {
+        ConfigTests.beforeAll();
     }
 
 
     @AfterAll
-    static void afterAll() {
-        ConfigComposeTests.afterAll();
-        compose.close();
+    public static void afterAll() {
+        ConfigTests.afterAll();
     }
 
 
@@ -58,7 +52,7 @@ public class ComposeRepo extends ConfigComposeTests {
     }
 
 
-    void cleanDbToTest() {
+    private void cleanDbToTest() {
         StepVerifier
                 .create(repo.deleteAll())
                 .expectSubscription()
@@ -70,12 +64,59 @@ public class ComposeRepo extends ConfigComposeTests {
 
 
     @Test
-    public void checkServices() {
-        super.checkTestcontainerComposeService(
-                compose,
-                ConfigComposeTests.SERVICE,
-                ConfigComposeTests.SERVICE_PORT
-                                              );
+    void checkContainer() {
+        assertTrue(container.isRunning());
+    }
+
+
+    @Test
+    @DisplayName("Save: Object")
+    public void save_obj() {
+        cleanDbToTest();
+
+        StepVerifier
+                .create(repo.save(customer2))
+                .expectSubscription()
+                .expectNext(customer2)
+                .verifyComplete();
+    }
+
+
+    @Test
+    @DisplayName("find: Count")
+    public void find_count() {
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
+
+        StepVerifier
+                .create(customerFlux)
+                .expectSubscription()
+                .expectNextCount(2)
+                .verifyComplete();
+    }
+
+
+    @Test
+    @DisplayName("Find: Objects Content")
+    public void find_1() {
+
+        final Flux<Customer> customerFlux =
+                repo.deleteAll()
+                    .thenMany(Flux.fromIterable(customerList))
+                    .flatMap(repo::save)
+                    .doOnNext(item -> repo.findAll());
+
+        StepVerifier
+                .create(customerFlux)
+                .expectSubscription()
+                .expectNextMatches(customer -> customer1.getEmail()
+                                                        .equals(customer.getEmail()))
+                .expectNextMatches(customer -> customer3.getEmail()
+                                                        .equals(customer.getEmail()))
+                .verifyComplete();
     }
 
 
@@ -98,40 +139,6 @@ public class ComposeRepo extends ConfigComposeTests {
 
 
     @Test
-    @DisplayName("Find: Objs Content")
-    public void find_1() {
-
-        final Flux<Customer> customerFlux =
-                repo.deleteAll()
-                    .thenMany(Flux.fromIterable(customerList))
-                    .flatMap(repo::save)
-                    .doOnNext(item -> repo.findAll());
-
-        StepVerifier
-                .create(customerFlux)
-                .expectSubscription()
-                .expectNextMatches(customer -> customer1.getEmail()
-                                                        .equals(customer.getEmail()))
-                .expectNextMatches(customer -> customer3.getEmail()
-                                                        .equals(customer.getEmail()))
-                .verifyComplete();
-    }
-
-
-    @Test
-    @DisplayName("Save: Object")
-    public void save_obj() {
-        cleanDbToTest();
-
-        StepVerifier
-                .create(repo.save(customer2))
-                .expectSubscription()
-                .expectNext(customer2)
-                .verifyComplete();
-    }
-
-
-    @Test
     @DisplayName("Delete: Count")
     public void deleteAll_count() {
 
@@ -147,24 +154,7 @@ public class ComposeRepo extends ConfigComposeTests {
                 .expectSubscription()
                 .expectNextCount(0)
                 .verifyComplete();
-    }
 
-
-    @Test
-    @DisplayName("find: Count")
-    public void find_count() {
-
-        final Flux<Customer> customerFlux =
-                repo.deleteAll()
-                    .thenMany(Flux.fromIterable(customerList))
-                    .flatMap(repo::save)
-                    .doOnNext(item -> repo.findAll());
-
-        StepVerifier
-                .create(customerFlux)
-                .expectSubscription()
-                .expectNextCount(2)
-                .verifyComplete();
     }
 
 
