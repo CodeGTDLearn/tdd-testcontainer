@@ -1,4 +1,4 @@
-package com.testcontainer.compose;
+package com.testcontainer.sharedCompose;
 
 import com.github.javafaker.Faker;
 import com.testcontainer.api.Customer;

@@ -1,4 +1,4 @@
-package com.testcontainer.compose;
+package com.testcontainer.sharedCompose;
 
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.CustomerService;

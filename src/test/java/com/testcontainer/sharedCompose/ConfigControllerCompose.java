@@ -1,4 +1,4 @@
-package com.testcontainer.compose;
+package com.testcontainer.sharedCompose;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;

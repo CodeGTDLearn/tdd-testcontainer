@@ -90,7 +90,7 @@ public class ServiceTests extends ConfigTests {
 
     @Test
     void checkContainer() {
-        assertTrue(container.isRunning());
+        assertTrue(restartedContainer.isRunning());
     }
 
 

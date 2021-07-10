@@ -108,7 +108,7 @@ public class ControllerTests extends RestartedContainerConfig {
 
     @Test
     public static void checkContainer() {
-        assertTrue(container.isRunning());
+        assertTrue(restartedContainer.isRunning());
     }
 
 

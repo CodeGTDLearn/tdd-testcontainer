@@ -1,4 +1,4 @@
-package com.testcontainer.compose;
+package com.testcontainer.sharedCompose;
 
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -13,7 +13,7 @@ https://medium.com/pictet-technologies-blog/speeding-up-your-integration-tests-w
 -testcontainers-e54ab655c03d
  */
 @Testcontainers
-public class ConfigCompose {
+public class SharedComposeConfig {
 
     final private String COMPOSE_PATH = "src/test/resources/compose-testcontainers.yml";
     final static public int SERVICE_PORT = 27017;
