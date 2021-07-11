@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
@@ -46,12 +47,17 @@ public class RepoTests extends ConfigTests {
 
   @BeforeEach
   void setUp() {
-    System.out.printf(
-         "\n======================================\nUri: %s \nName: %s",
-         restartedContainer.getReplicaSetUrl(),
-         restartedContainer.getContainerName()
-                     );
+    loadDataMass();
+  }
 
+
+  @AfterEach
+  void tearDown() {
+//    cleanDb();
+  }
+
+
+  private void loadDataMass() {
     customer1 = customerWithName().create();
     customer2 = customerWithName().create();
     customer3 = customerWithName().create();
@@ -59,7 +65,7 @@ public class RepoTests extends ConfigTests {
   }
 
 
-  private void cleanDbToTest() {
+  private void cleanDb() {
     StepVerifier
          .create(repo.deleteAll())
          .expectSubscription()
@@ -70,49 +76,39 @@ public class RepoTests extends ConfigTests {
   }
 
 
+  private void saveAndCheckObjectInDb(Customer customer) {
+    StepVerifier
+         .create(repo.save(customer))
+         .expectSubscription()
+         .expectNext(customer)
+         .verifyComplete();
+  }
+
+
   @Test
+  @DisplayName("Container")
   void checkContainer() {
     assertTrue(restartedContainer.isRunning());
   }
 
 
   @Test
-  @DisplayName("Save: Object")
-  public void save_obj() {
-    cleanDbToTest();
-
-    StepVerifier
-         .create(repo.save(customer2))
-         .expectSubscription()
-         .expectNext(customer2)
-         .verifyComplete();
-  }
-
-
-  @Test
-  @DisplayName("Find: Count")
-  public void find_count() {
-    final Flux<Customer> customerFlux =
-         repo.deleteAll()
-             .thenMany(Flux.fromIterable(customerList))
-             .flatMap(repo::save)
-             .doOnNext(item -> repo.findAll());
-
-    StepVerifier
-         .create(customerFlux)
-         .expectSubscription()
-         .expectNextCount(2)
-         .verifyComplete();
+  @DisplayName("Save")
+  public void save() {
+    saveAndCheckObjectInDb(customerWithName().create());
   }
 
 
   @Test
   @DisplayName("Find: Content")
-  public void find_1() {
+  public void find_count() {
+    var customer1 = customerWithName().create();
+    var customer3 = customerWithName().create();
+    var list = Arrays.asList(customer1,customer3);
 
     final Flux<Customer> customerFlux =
          repo.deleteAll()
-             .thenMany(Flux.fromIterable(customerList))
+             .thenMany(Flux.fromIterable(list))
              .flatMap(repo::save)
              .doOnNext(item -> repo.findAll());
 
@@ -130,10 +126,13 @@ public class RepoTests extends ConfigTests {
   @Test
   @DisplayName("Find: Objects")
   public void find_2() {
+    var customer1 = customerWithName().create();
+    var customer3 = customerWithName().create();
+    var list = Arrays.asList(customer1,customer3);
 
     final Flux<Customer> customerFlux =
          repo.deleteAll()
-             .thenMany(Flux.fromIterable(customerList))
+             .thenMany(Flux.fromIterable(list))
              .flatMap(repo::save)
              .doOnNext(item -> repo.findAll());
 
@@ -146,18 +145,21 @@ public class RepoTests extends ConfigTests {
 
 
   @Test
-  @DisplayName("Delete: Count")
+  @DisplayName("Delete")
   public void deleteAll_count() {
 
+    var customer = customerWithName().create();
+    saveAndCheckObjectInDb(customer);
+
     StepVerifier
-         .create(repo.deleteAll())
+         .create(repo.deleteById(customer.getId()))
          .expectSubscription()
          .verifyComplete();
 
-    Flux<Customer> fluxTest = repo.findAll();
+    Mono<Customer> monoTest = repo.findById(customer.getId());
 
     StepVerifier
-         .create(fluxTest)
+         .create(monoTest)
          .expectSubscription()
          .expectNextCount(0)
          .verifyComplete();

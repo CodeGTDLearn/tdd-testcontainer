@@ -23,14 +23,3 @@ public class ConfigMongoTransaction {
         return new ReactiveMongoTransactionManager(dbf);
     }
 }
-
-//    @Bean
-//    ReactiveTransactionManager  transactionManager(ReactiveMongoDatabaseFactory f) {
-//        return new ReactiveMongoTransactionManager(f);
-//    }
-//
-//
-//    @Bean
-//    TransactionalOperator transactionOperator(ReactiveTransactionManager r) {
-//        return TransactionalOperator.create(r);
-//    }

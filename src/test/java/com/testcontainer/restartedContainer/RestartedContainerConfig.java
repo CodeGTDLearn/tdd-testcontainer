@@ -12,7 +12,6 @@ import org.testcontainers.utility.DockerImageName;
 RESTARTED TESTCONTAINERS
 https://www.testcontainers.org/test_framework_integration/junit_5/#restarted-containers
  */
-@Getter
 @Testcontainers
 public class RestartedContainerConfig {
 

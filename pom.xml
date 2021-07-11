@@ -26,6 +26,7 @@
     <properties>
         <java.version>11</java.version>
         <groovy.version>3.0.4</groovy.version>
+        <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
     </properties>
 
     <dependencies>
