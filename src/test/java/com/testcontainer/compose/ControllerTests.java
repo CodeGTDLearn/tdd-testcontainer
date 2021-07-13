@@ -1,4 +1,4 @@
-package com.testcontainer.restartedContainer;
+package com.testcontainer.compose;
 
 import com.github.javafaker.Faker;
 import com.testcontainer.api.Customer;
@@ -7,10 +7,10 @@ import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.junit.jupiter.Container;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,29 +29,28 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.*;
 
-@SpringBootTest(webEnvironment = RANDOM_PORT)
-@AutoConfigureWebTestClient
-public class ControllerTests extends RestartedContainerConfig {
+public class ControllerTests extends ConfigControllerCompose {
 
     private List<Customer> customerList;
     private Customer customerWithId;
+    final String REQ_MAP = "/customer";
 
-    //MOCKED-SERVER: WEB-TEST-CLIENT(non-blocking client)'
-    //SHOULD BE USED WITH 'TEST-CONTAINERS'
-    //BECAUSE THERE IS NO 'REAL-SERVER' CREATED VIA DOCKER
+
+    @Container
+    private static final DockerComposeContainer<?> compose = new ConfigTests().compose;
+
+
+    // MOCKED-SERVER: WEB-TEST-CLIENT(non-blocking client)'
+    // SHOULD BE USED WITH 'TEST-CONTAINERS'
+    // BECAUSE THERE IS NO 'REAL-SERVER' CREATED VIA DOCKER-COMPOSE
     @Autowired
     WebTestClient mockedWebClient;
 
+
     @Autowired
     private ICustomerService service;
-
-    //    final ContentType CONT_ANY = ContentType.ANY;
-    //    final ContentType CONT_JSON = ContentType.JSON;
-    final String REQ_MAP = "/customer";
 
 
     @BeforeAll
@@ -63,6 +62,7 @@ public class ControllerTests extends RestartedContainerConfig {
     @AfterAll
     static void afterAll() {
         ConfigTests.afterAll();
+        compose.close();
     }
 
 
@@ -86,7 +86,7 @@ public class ControllerTests extends RestartedContainerConfig {
     }
 
 
-    private void cleanDbToTest() {
+    void cleanDbToTest() {
         StepVerifier
                 .create(service.deleteAll())
                 .expectSubscription()
@@ -107,59 +107,13 @@ public class ControllerTests extends RestartedContainerConfig {
 
 
     @Test
-    public static void checkContainer() {
-        assertTrue(restartedContainer.isRunning());
-    }
+    void checkServices() {
 
-
-    @Test
-    public void save_WebTestClient() {
-
-        mockedWebClient
-                .post()
-                .uri(REQ_MAP)
-                .body(Mono.just(customerWithId),Customer.class)
-                .exchange()
-                .expectStatus()
-                .isCreated()
-                .expectHeader()
-                .contentType(MediaType.APPLICATION_JSON)
-                .expectBody()
-                .jsonPath("$.id")
-                .isEqualTo(customerWithId.getId())
-                .jsonPath("$.email")
-                .isEqualTo(customerWithId.getEmail())
-                .jsonPath("$.rating")
-                .isEqualTo(customerWithId.getRating())
-        ;
-    }
-
-
-    @Test
-    public void save_RA() {
-        cleanDbToTest();
-
-        RestAssuredWebTestClient
-                .given()
-                .webTestClient(mockedWebClient)
-                .header("Accept",ContentType.ANY)
-                .header("Content-type",ContentType.JSON)
-                .body(customerWithId)
-
-                .when()
-                .post(REQ_MAP)
-
-                .then()
-                .statusCode(CREATED.value())
-                .and()
-                .body("id",containsStringIgnoringCase(customerWithId.getId()))
-                .and()
-                .body("email",containsStringIgnoringCase(customerWithId.getEmail()))
-                .and()
-                .body("rating",is(customerWithId.getRating()))
-        ;
-
-        StepVerifierCountCostumerFlux(service.findAll(),1);
+        new ConfigTests().checkTestcontainerComposeService(
+             compose,
+             ConfigTests.SERVICE,
+             ConfigTests.SERVICE_PORT
+                                                          );
     }
 
 
@@ -193,6 +147,57 @@ public class ControllerTests extends RestartedContainerConfig {
                 .body("size()",is(2))
                 .and()
                 .body("id",hasItem(customerWithId.getId()))
+        ;
+    }
+
+
+    @Test
+    public void save_RA() {
+        cleanDbToTest();
+
+        RestAssuredWebTestClient
+                .given()
+                .webTestClient(mockedWebClient)
+                .header("Accept",ContentType.ANY)
+                .header("Content-type",ContentType.JSON)
+                .body(customerWithId)
+
+                .when()
+                .post(REQ_MAP)
+
+                .then()
+                .statusCode(CREATED.value())
+                .and()
+                .body("id",containsStringIgnoringCase(customerWithId.getId()))
+                .and()
+                .body("email",containsStringIgnoringCase(customerWithId.getEmail()))
+                .and()
+                .body("rating",is(customerWithId.getRating()))
+        ;
+
+        StepVerifierCountCostumerFlux(service.findAll(),1);
+    }
+
+
+    @Test
+    public void save_WebTestClient() {
+
+        mockedWebClient
+                .post()
+                .uri(REQ_MAP)
+                .body(Mono.just(customerWithId),Customer.class)
+                .exchange()
+                .expectStatus()
+                .isCreated()
+                .expectHeader()
+                .contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$.id")
+                .isEqualTo(customerWithId.getId())
+                .jsonPath("$.email")
+                .isEqualTo(customerWithId.getEmail())
+                .jsonPath("$.rating")
+                .isEqualTo(customerWithId.getRating())
         ;
     }
 

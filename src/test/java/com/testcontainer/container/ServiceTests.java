@@ -1,4 +1,4 @@
-package com.testcontainer.restartedContainer;
+package com.testcontainer.container;
 
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.CustomerService;
@@ -35,29 +35,30 @@ public class ServiceTests extends ConfigTests {
 
 
   @BeforeAll
-  static void beforeAll() {
+  public static void beforeAll() {
     ConfigTests.beforeAll();
   }
 
 
   @AfterAll
-  static void afterAll() {
+  public static void afterAll() {
     ConfigTests.afterAll();
   }
 
 
   @BeforeEach
   void setUp() {
+    customer1 = customerWithName().create();
+    customer2 = customerWithName().create();
+    customer3 = customerWithName().create();
+    customerList = Arrays.asList(customer1,customer3);
+
     //------------------------------------------//
     //VERY IMPORTANT!!!!
     //DEPENDENCY INJECTION MUST BE DONE MANUALLY
     service = new CustomerService(repo);
     //------------------------------------------//
 
-    customer1 = customerWithName().create();
-    customer2 = customerWithName().create();
-    customer3 = customerWithName().create();
-    customerList = Arrays.asList(customer1,customer2);
 
     //        //------------------------------------------//
     //        //VERY IMPORTANT!!!!
@@ -89,26 +90,23 @@ public class ServiceTests extends ConfigTests {
 
 
   @Test
-  void checkContainer() {
-    assertTrue(restartedContainer.isRunning());
-  }
-
-
-  @Test
+  @DisplayName("Save")
   public void save_obj() {
-    cleanDbToTest();
-
-    Mono<Customer> customerMono = service.save(customer3);
-
-    StepVerifier
-         .create(customerMono)
-         .expectSubscription()
-         .expectNext(customer3)
-         .verifyComplete();
+    final Flux<Customer> customerFlux = saveAndGetCustomerFlux(customerList);
+//    cleanDbToTest();
+//
+//    Mono<Customer> customerMono = service.save(customer3);
+//
+//    StepVerifier
+//         .create(customerMono)
+//         .expectSubscription()
+//         .expectNext(customer3)
+//         .verifyComplete();
   }
 
 
   @Test
+  @DisplayName("Find: Count")
   public void find_count() {
 
     final Flux<Customer> customerFlux =
@@ -126,6 +124,7 @@ public class ServiceTests extends ConfigTests {
 
 
   @Test
+  @DisplayName("Find: Match")
   public void find_obj_1() {
 
     final Flux<Customer> customerFlux =
@@ -146,6 +145,7 @@ public class ServiceTests extends ConfigTests {
 
 
   @Test
+  @DisplayName("Find: Object")
   public void find_obj_2() {
 
     final Flux<Customer> customerFlux =
@@ -163,7 +163,8 @@ public class ServiceTests extends ConfigTests {
 
 
   @Test
-  public void deleteAll_count() {
+  @DisplayName("Delete")
+  public void delete() {
 
     StepVerifier
          .create(service.deleteAll())
@@ -177,6 +178,18 @@ public class ServiceTests extends ConfigTests {
          .expectSubscription()
          .expectNextCount(0)
          .verifyComplete();
+  }
+
+  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
+    return service.deleteAll()
+               .thenMany(Flux.fromIterable(customerList))
+               .flatMap(service::save)
+               .doOnNext(item -> service.findAll());
+  }
+
+  @Test
+  void checkContainer() {
+    assertTrue(restartedContainer.isRunning());
   }
 
 

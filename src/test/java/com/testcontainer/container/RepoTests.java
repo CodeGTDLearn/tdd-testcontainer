@@ -1,4 +1,4 @@
-package com.testcontainer.restartedContainer;
+package com.testcontainer.container;
 
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerRepo;
@@ -47,17 +47,6 @@ public class RepoTests extends ConfigTests {
 
   @BeforeEach
   void setUp() {
-    loadDataMass();
-  }
-
-
-  @AfterEach
-  void tearDown() {
-//    cleanDb();
-  }
-
-
-  private void loadDataMass() {
     customer1 = customerWithName().create();
     customer2 = customerWithName().create();
     customer3 = customerWithName().create();
@@ -65,23 +54,82 @@ public class RepoTests extends ConfigTests {
   }
 
 
-  private void cleanDb() {
-    StepVerifier
-         .create(repo.deleteAll())
-         .expectSubscription()
-         .verifyComplete();
+  @Test
+  @DisplayName("Save")
+  public void save() {
+    final Flux<Customer> customerFlux = saveAndGetCustomerFlux(customerList);
 
-    System.out.println("\n\n==================> CLEAN-DB-TO-TEST" +
-                            " <==================\n\n");
+    StepVerifier.create(customerFlux)
+                .expectNextSequence(customerList)
+                .verifyComplete();
   }
 
 
-  private void saveAndCheckObjectInDb(Customer customer) {
+  @Test
+  @DisplayName("Find: Content")
+  public void find_count() {
+    final Flux<Customer> customerFlux = saveAndGetCustomerFlux(customerList);
+
     StepVerifier
-         .create(repo.save(customer))
+         .create(customerFlux)
          .expectSubscription()
-         .expectNext(customer)
+         .expectNextMatches(customer -> customerList.get(0)
+                                                    .getEmail()
+                                                    .equals(customer.getEmail()))
+         .expectNextMatches(customer -> customerList.get(1)
+                                                    .getEmail()
+                                                    .equals(customer.getEmail()))
          .verifyComplete();
+  }
+
+
+  @Test
+  @DisplayName("Find: Objects")
+  public void find_object() {
+    final Flux<Customer> customerFlux = saveAndGetCustomerFlux(customerList);
+
+    StepVerifier
+         .create(customerFlux)
+         .expectNext(customerList.get(0))
+         .expectNext(customerList.get(1))
+         .verifyComplete();
+  }
+
+
+  @Test
+  @DisplayName("Delete")
+  public void delete() {
+
+    final Flux<Customer> customerFlux = saveAndGetCustomerFlux(customerList);
+
+    StepVerifier.create(customerFlux)
+                .expectNextSequence(customerList)
+                .verifyComplete();
+
+    StepVerifier
+         .create(repo.deleteById(customerList.get(0)
+                                             .getId()))
+         .expectSubscription()
+         .verifyComplete();
+
+    Mono<Customer> monoTest = repo.findById(customerList.get(0)
+                                                        .getId());
+
+    StepVerifier
+         .create(monoTest)
+         .expectSubscription()
+         .expectNextCount(0)
+         .verifyComplete();
+  }
+
+
+  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
+    return repo.deleteAll()
+               .thenMany(Flux.fromIterable(customerList))
+               .flatMap(repo::save)
+               .doOnNext(item -> repo.findAll());
+
+//    return repo.saveAll(Flux.fromIterable(customerList));
   }
 
 
@@ -89,81 +137,6 @@ public class RepoTests extends ConfigTests {
   @DisplayName("Container")
   void checkContainer() {
     assertTrue(restartedContainer.isRunning());
-  }
-
-
-  @Test
-  @DisplayName("Save")
-  public void save() {
-    saveAndCheckObjectInDb(customerWithName().create());
-  }
-
-
-  @Test
-  @DisplayName("Find: Content")
-  public void find_count() {
-    var customer1 = customerWithName().create();
-    var customer3 = customerWithName().create();
-    var list = Arrays.asList(customer1,customer3);
-
-    final Flux<Customer> customerFlux =
-         repo.deleteAll()
-             .thenMany(Flux.fromIterable(list))
-             .flatMap(repo::save)
-             .doOnNext(item -> repo.findAll());
-
-    StepVerifier
-         .create(customerFlux)
-         .expectSubscription()
-         .expectNextMatches(customer -> customer1.getEmail()
-                                                 .equals(customer.getEmail()))
-         .expectNextMatches(customer -> customer3.getEmail()
-                                                 .equals(customer.getEmail()))
-         .verifyComplete();
-  }
-
-
-  @Test
-  @DisplayName("Find: Objects")
-  public void find_2() {
-    var customer1 = customerWithName().create();
-    var customer3 = customerWithName().create();
-    var list = Arrays.asList(customer1,customer3);
-
-    final Flux<Customer> customerFlux =
-         repo.deleteAll()
-             .thenMany(Flux.fromIterable(list))
-             .flatMap(repo::save)
-             .doOnNext(item -> repo.findAll());
-
-    StepVerifier
-         .create(customerFlux)
-         .expectNext(customer1)
-         .expectNext(customer3)
-         .verifyComplete();
-  }
-
-
-  @Test
-  @DisplayName("Delete")
-  public void deleteAll_count() {
-
-    var customer = customerWithName().create();
-    saveAndCheckObjectInDb(customer);
-
-    StepVerifier
-         .create(repo.deleteById(customer.getId()))
-         .expectSubscription()
-         .verifyComplete();
-
-    Mono<Customer> monoTest = repo.findById(customer.getId());
-
-    StepVerifier
-         .create(monoTest)
-         .expectSubscription()
-         .expectNextCount(0)
-         .verifyComplete();
-
   }
 
 

@@ -1,6 +1,5 @@
-package com.testcontainer.restartedContainer;
+package com.testcontainer.container;
 
-import lombok.Getter;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
@@ -13,7 +12,7 @@ RESTARTED TESTCONTAINERS
 https://www.testcontainers.org/test_framework_integration/junit_5/#restarted-containers
  */
 @Testcontainers
-public class RestartedContainerConfig {
+public class ContainerConfig {
 
   @Container
   public static final MongoDBContainer restartedContainer =
