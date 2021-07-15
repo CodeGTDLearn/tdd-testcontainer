@@ -6,12 +6,17 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 public interface ICustomerService {
-    Mono<Customer> save(Customer customer);
+  Mono<Customer> save(Customer customer);
 
-    Flux<Customer> findAll();
+  Flux<Customer> findAll();
 
-    Mono<Void> deleteAll();
+  Mono<Void> deleteAll();
 
-    public Flux<Customer> saveList_IfThrowExceptionExecutesTheRollback(List<Customer> customer);
+  Flux<Customer> saveList_IfThrowExceptionExecutesTheRollback(List<Customer> customer);
 
+  Flux<Customer> saveAll(List<Customer> customerList);
+
+  Mono<Void>  deleteById(String id);
+
+  Mono<Customer> findById(String id);
 }

@@ -1,7 +1,10 @@
-package com.testcontainer.container;
+package com.testcontainer.sharedContainer.isolatedStatusTests;
 
 import com.testcontainer.api.Customer;
+import com.testcontainer.api.CustomerService;
 import com.testcontainer.api.ICustomerRepo;
+import com.testcontainer.api.ICustomerService;
+import com.testcontainer.sharedContainer.ConfigTests;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -21,16 +24,17 @@ import java.util.concurrent.TimeoutException;
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RepoTests extends ConfigTests {
+public class ServiceTests extends ConfigTests {
 
-  private Customer customer1;
-  private Customer customer2;
-  private Customer customer3;
   private List<Customer> customerList;
+  private Flux<Customer> customerFlux;
 
   @Lazy
   @Autowired
   private ICustomerRepo repo;
+
+//  @Autowired
+  private ICustomerService service;
 
 
   @BeforeAll
@@ -47,18 +51,22 @@ public class RepoTests extends ConfigTests {
 
   @BeforeEach
   void setUp() {
-    customer1 = customerWithName().create();
-    customer2 = customerWithName().create();
-    customer3 = customerWithName().create();
-    customerList = Arrays.asList(customer1,customer3);
+    //------------------------------------------//
+    //VERY IMPORTANT!!!!
+    //DEPENDENCY INJECTION MUST BE DONE MANUALLY
+    service = new CustomerService(repo);
+    //------------------------------------------//
+
+    Customer customer1 = customerWithName().create();
+    Customer customer2 = customerWithName().create();
+    customerList = Arrays.asList(customer1,customer2);
+    customerFlux = saveAndGetCustomerFlux(customerList);
   }
 
 
   @Test
   @DisplayName("Save")
   public void save() {
-    final Flux<Customer> customerFlux = saveAndGetCustomerFlux(customerList);
-
     StepVerifier.create(customerFlux)
                 .expectNextSequence(customerList)
                 .verifyComplete();
@@ -68,8 +76,6 @@ public class RepoTests extends ConfigTests {
   @Test
   @DisplayName("Find: Content")
   public void find_count() {
-    final Flux<Customer> customerFlux = saveAndGetCustomerFlux(customerList);
-
     StepVerifier
          .create(customerFlux)
          .expectSubscription()
@@ -86,8 +92,6 @@ public class RepoTests extends ConfigTests {
   @Test
   @DisplayName("Find: Objects")
   public void find_object() {
-    final Flux<Customer> customerFlux = saveAndGetCustomerFlux(customerList);
-
     StepVerifier
          .create(customerFlux)
          .expectNext(customerList.get(0))
@@ -98,45 +102,32 @@ public class RepoTests extends ConfigTests {
 
   @Test
   @DisplayName("Delete")
-  public void delete() {
-
-    final Flux<Customer> customerFlux = saveAndGetCustomerFlux(customerList);
-
+  public void deleteById() {
     StepVerifier.create(customerFlux)
                 .expectNextSequence(customerList)
                 .verifyComplete();
 
     StepVerifier
-         .create(repo.deleteById(customerList.get(0)
-                                             .getId()))
+         .create(service.deleteById(customerList.get(0)
+                                                .getId()))
          .expectSubscription()
          .verifyComplete();
 
-    Mono<Customer> monoTest = repo.findById(customerList.get(0)
-                                                        .getId());
+    Mono<Customer> monoTest = service.findById(customerList.get(0)
+                                                           .getId());
 
     StepVerifier
          .create(monoTest)
          .expectSubscription()
-         .expectNextCount(0)
+         .expectNextCount(0L)
          .verifyComplete();
-  }
-
-
-  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
-    return repo.deleteAll()
-               .thenMany(Flux.fromIterable(customerList))
-               .flatMap(repo::save)
-               .doOnNext(item -> repo.findAll());
-
-//    return repo.saveAll(Flux.fromIterable(customerList));
   }
 
 
   @Test
   @DisplayName("Container")
-  void checkContainer() {
-    assertTrue(restartedContainer.isRunning());
+  public void checkContainer() {
+    assertTrue(sharedContainer.isRunning());
   }
 
 
@@ -157,5 +148,17 @@ public class RepoTests extends ConfigTests {
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
       Assertions.assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
     }
+  }
+
+
+  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
+
+    //    return repo.deleteAll()
+    //               .thenMany(Flux.fromIterable(customerList))
+    //               .flatMap(repo::save)
+    //               .doOnNext(item -> repo.findAll());
+
+
+    return service.saveAll(customerList);
   }
 }

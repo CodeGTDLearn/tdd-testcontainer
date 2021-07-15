@@ -1,4 +1,4 @@
-package com.testcontainer.container;
+package com.testcontainer.sharedContainer;
 
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.http.ContentType;
@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -31,40 +33,42 @@ b) USO ALTERNATIVO (DataMongoTest/SpringBootTest) - CONFLITAM ENTRE-SI:
 @ActiveProfiles("test")
 public class ConfigTests extends ContainerConfig {
 
-    final static Long MAX_TIMEOUT = 15000L;
-    final static ContentType JSON_CONTENT_TYPE = ContentType.JSON;
+  final static Long MAX_TIMEOUT = 15000L;
+  final static ContentType JSON_CONTENT_TYPE = ContentType.JSON;
 
 
-    @BeforeAll
-    static void beforeAll() {
-        BlockHound.install(
-                builder -> builder
-                        .allowBlockingCallsInside("java.io.PrintStream",
-                                                  "write"
-                                                 )
-                          );
+  @BeforeAll
+  public static void beforeAll() {
+    BlockHound.install(
+         builder -> builder
+              .allowBlockingCallsInside("java.io.PrintStream",
+                                        "write"
+                                       ));
 
-        //DEFINE CONFIG-GLOBAL PARA OS REQUESTS DOS TESTES
-        RestAssuredWebTestClient.requestSpecification =
-                new WebTestClientRequestSpecBuilder()
-                        .setContentType(JSON_CONTENT_TYPE)
-                        .build();
-
-
-        //DEFINE CONFIG-GLOBAL PARA OS RESPONSE DOS TESTES
-        RestAssuredWebTestClient.responseSpecification =
-                new ResponseSpecBuilder()
-                        .expectResponseTime(
-                                Matchers.lessThanOrEqualTo(MAX_TIMEOUT))
-                        .build();
-    }
+    //DEFINE CONFIG-GLOBAL PARA OS REQUESTS DOS TESTES
+    RestAssuredWebTestClient.requestSpecification =
+         new WebTestClientRequestSpecBuilder()
+              .setContentType(JSON_CONTENT_TYPE)
+              .build();
 
 
-    @AfterAll
-    static void afterAll() {
-        //        ConfigContainer.closingContainer();
-        RestAssuredWebTestClient.reset();
-    }
+    //DEFINE CONFIG-GLOBAL PARA OS RESPONSE DOS TESTES
+    RestAssuredWebTestClient.responseSpecification =
+         new ResponseSpecBuilder()
+              .expectResponseTime(
+                   Matchers.lessThanOrEqualTo(MAX_TIMEOUT))
+              .build();
+
+    header("BEFORE-ALL");
+  }
+
+
+  @AfterAll
+  public static void afterAll() {
+    RestAssuredWebTestClient.reset();
+
+    header("AFTER-ALL");
+  }
 }
 
 

@@ -13,49 +13,67 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 //TUTORIAL: https://rieckpil.de/mongodb-testcontainers-setup-for-datamongotest/
+@Slf4j
 @Service
 @AllArgsConstructor
-@Slf4j
 public class CustomerService implements ICustomerService {
 
-    private final ICustomerRepo repo;
+  private final ICustomerRepo repo;
 
 
-    @Override
-    public Mono<Customer> save(Customer customer) {
-        return repo.save(customer);
-    }
+  @Override
+  public Mono<Customer> save(Customer customer) {
+    return repo.save(customer);
+  }
 
 
-    @Override
-    public Flux<Customer> findAll() {
-        return repo.findAll();
-    }
+  @Override
+  public Flux<Customer> findAll() {
+    return repo.findAll();
+  }
 
 
-    @Override
-    public Mono<Void> deleteAll() {
-        return repo.deleteAll();
-    }
+  @Override
+  public Mono<Void> deleteAll() {
+    return repo.deleteAll();
+  }
 
 
-    @Override
-    @Transactional
-    public Flux<Customer> saveList_IfThrowExceptionExecutesTheRollback(List<Customer> customerList) {
+  @Override
+  @Transactional
+  public Flux<Customer> saveList_IfThrowExceptionExecutesTheRollback(List<Customer> customerList) {
 
-        return repo
-                .saveAll(customerList)
-                .doOnNext(this::throwResponseStatusExceptionWhenMissingEmail);
-    }
+    return repo
+         .saveAll(customerList)
+         .doOnNext(this::throwResponseStatusExceptionWhenMissingEmail);
+  }
 
 
-    private void throwResponseStatusExceptionWhenMissingEmail(Customer customer) {
-        if (StringUtil.isNullOrEmpty(customer.getEmail()))
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Email is missing - ROLLBACK DONE!"
-            );
-    }
+  @Override
+  public Flux<Customer> saveAll(List<Customer> customerList) {
+    return repo.saveAll(customerList);
+  }
+
+
+  @Override
+  public Mono<Void> deleteById(String id) {
+    return repo.deleteById(id);
+  }
+
+
+  @Override
+  public Mono<Customer> findById(String id) {
+    return repo.findById(id);
+  }
+
+
+  private void throwResponseStatusExceptionWhenMissingEmail(Customer customer) {
+    if (StringUtil.isNullOrEmpty(customer.getEmail()))
+      throw new ResponseStatusException(
+           HttpStatus.BAD_REQUEST,
+           "Email is missing - ROLLBACK DONE!"
+      );
+  }
 }
 
 

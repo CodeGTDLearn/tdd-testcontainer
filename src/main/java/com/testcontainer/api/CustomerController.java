@@ -39,6 +39,12 @@ public class CustomerController {
         return service.deleteAll();
     }
 
+    @DeleteMapping("/{id}")
+    @ResponseStatus(NO_CONTENT)
+    public Mono<Void> removeById(@PathVariable String id) {
+        return service.deleteById(id);
+    }
+
 
     @PostMapping("saveRollback")
     @ResponseStatus(CREATED)
