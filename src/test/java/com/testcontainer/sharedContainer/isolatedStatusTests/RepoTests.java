@@ -3,7 +3,6 @@ package com.testcontainer.sharedContainer.isolatedStatusTests;
 import com.testcontainer.api.Customer;
 import com.testcontainer.api.ICustomerRepo;
 import com.testcontainer.sharedContainer.ConfigTests;
-import com.testcontainer.sharedContainer.ContainerConfig;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -21,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RepoTests extends ConfigTests {
 
@@ -46,20 +45,37 @@ public class RepoTests extends ConfigTests {
 
 
   @BeforeEach
-  void setUp() {
+  public void setUp() {
     Customer customer1 = customerWithName().create();
     Customer customer2 = customerWithName().create();
     customerList = Arrays.asList(customer1,customer2);
-    customerFlux = saveAndGetCustomerFlux(customerList);
+    customerFlux = repo.saveAll(customerList);
   }
 
 
   @Test
-  @DisplayName("Save")
-  public void save() {
+  @DisplayName("Save_V1")
+  public void save1() {
     StepVerifier.create(customerFlux)
                 .expectNextSequence(customerList)
                 .verifyComplete();
+  }
+
+
+  @Test
+  @DisplayName("Save_V2")
+  public void save2() {
+    Customer customer = customerWithName().create();
+    Mono<Customer> monoCustomer = repo.save(customer);
+
+    StepVerifier
+         .create(monoCustomer)
+         .assertNext(userCreated -> {
+           assertEquals(customer.getEmail(),userCreated.getEmail());
+           assertNotNull(userCreated.getId());
+         })
+         .expectComplete()
+         .verify();
   }
 
 
@@ -91,8 +107,8 @@ public class RepoTests extends ConfigTests {
 
 
   @Test
-  @DisplayName("Delete")
-  public void delete() {
+  @DisplayName("DeleteById")
+  public void deleteById() {
     StepVerifier.create(customerFlux)
                 .expectNextSequence(customerList)
                 .verifyComplete();
@@ -140,15 +156,13 @@ public class RepoTests extends ConfigTests {
     }
   }
 
+  //  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
+  //    return repo.deleteAll()
+  //               .thenMany(Flux.fromIterable(customerList))
+  //               .flatMap(repo::save)
+  //               .doOnNext(item -> repo.findAll());
+  //
+  //
+  //    return repo.saveAll(customerList);
 
-  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
-
-    //    return repo.deleteAll()
-    //               .thenMany(Flux.fromIterable(customerList))
-    //               .flatMap(repo::save)
-    //               .doOnNext(item -> repo.findAll());
-
-
-    return repo.saveAll(customerList);
-  }
 }

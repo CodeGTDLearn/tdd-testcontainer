@@ -14,7 +14,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.blockhound.BlockingOperationError;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
@@ -51,7 +50,7 @@ public class ControllerTests extends ContainerConfig {
   @Autowired
   private ICustomerService service;
 
-  final String REQ_MAP = "/customer";
+  final private String REQ_MAP = "/customer";
 
 
   @BeforeAll
@@ -67,7 +66,7 @@ public class ControllerTests extends ContainerConfig {
 
 
   @BeforeEach
-  public void setUpLocal() {
+  public void setUp() {
     //REAL-SERVER INJECTED IN WEB-TEST-CLIENT(non-blocking client)'
     //SHOULD BE USED WHEN 'DOCKER-COMPOSE' UP A REAL-WEB-SERVER
     //BECAUSE THERE IS 'REAL-SERVER' CREATED VIA DOCKER-COMPOSE
@@ -87,6 +86,7 @@ public class ControllerTests extends ContainerConfig {
 
 
   @Test
+  @DisplayName("Save_WebClient")
   public void save_WebTestClient() {
     mockedWebClient
          .post()
@@ -109,6 +109,7 @@ public class ControllerTests extends ContainerConfig {
 
 
   @Test
+  @DisplayName("Save")
   public void save_RA() {
     RestAssuredWebTestClient
          .given()
@@ -139,16 +140,11 @@ public class ControllerTests extends ContainerConfig {
 
 
   @Test
+  @DisplayName("FindAll")
   public void findAll() {
 
     StepVerifier
          .create(service.save(customerWithId))
-         .expectSubscription()
-         .expectNext(customerWithId)
-         .verifyComplete();
-
-    StepVerifier
-         .create(service.findAll())
          .expectSubscription()
          .expectNext(customerWithId)
          .verifyComplete();
@@ -169,14 +165,13 @@ public class ControllerTests extends ContainerConfig {
          .body()
          .and()
 
-         .body("size()",is(2))
-         .and()
          .body("id",hasItem(customerWithId.getId()))
     ;
   }
 
 
   @Test
+  @DisplayName("DeleteById")
   public void deleteById() {
     StepVerifier
          .create(service.save(customerWithId))
@@ -184,11 +179,11 @@ public class ControllerTests extends ContainerConfig {
          .expectNext(customerWithId)
          .verifyComplete();
 
-        StepVerifier
-             .create(service.findById(customerWithId.getId()))
-             .expectSubscription()
-             .expectNextCount(1L)
-             .verifyComplete();
+    StepVerifier
+         .create(service.findById(customerWithId.getId()))
+         .expectSubscription()
+         .expectNextCount(1L)
+         .verifyComplete();
 
     RestAssuredWebTestClient
          .given()
@@ -210,6 +205,14 @@ public class ControllerTests extends ContainerConfig {
 
 
   @Test
+  @DisplayName("Container")
+  public void checkContainer() {
+    assertTrue(sharedContainer.isRunning());
+  }
+
+
+  @Test
+  @DisplayName("BHWorks")
   public void bHWorks() {
     try {
       FutureTask<?> task = new FutureTask<>(() -> {
@@ -225,11 +228,5 @@ public class ControllerTests extends ContainerConfig {
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
       Assertions.assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
     }
-  }
-
-
-  @Test
-  public void checkContainer() {
-    assertTrue(sharedContainer.isRunning());
   }
 }

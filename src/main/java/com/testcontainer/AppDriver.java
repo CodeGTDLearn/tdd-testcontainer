@@ -3,10 +3,11 @@ package com.testcontainer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
-@EnableMongoRepositories
+@EnableReactiveMongoRepositories
 @EnableTransactionManagement
 public class AppDriver {
 

@@ -16,7 +16,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import reactor.blockhound.BlockHound;
 
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.*;
+import static org.springframework.test.annotation.DirtiesContext.MethodMode.*;
 
 /*------------------------------------------------------------
                          DataMongoTest

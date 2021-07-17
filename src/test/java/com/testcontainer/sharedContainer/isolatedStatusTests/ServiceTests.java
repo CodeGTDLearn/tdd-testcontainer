@@ -7,7 +7,7 @@ import com.testcontainer.api.ICustomerService;
 import com.testcontainer.sharedContainer.ConfigTests;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationContext;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,12 +29,17 @@ public class ServiceTests extends ConfigTests {
   private List<Customer> customerList;
   private Flux<Customer> customerFlux;
 
-  @Lazy
-  @Autowired
-  private ICustomerRepo repo;
+  //  @Lazy
+  //  @Autowired
+  //  private ICustomerRepo repo;
 
-//  @Autowired
+  @Autowired
+  ApplicationContext context;
+
   private ICustomerService service;
+
+
+  ICustomerRepo repo = (ICustomerRepo) context.getBean("ICustomerRepo");
 
 
   @BeforeAll
@@ -50,17 +55,18 @@ public class ServiceTests extends ConfigTests {
 
 
   @BeforeEach
-  void setUp() {
+  public void setUp() {
     //------------------------------------------//
     //VERY IMPORTANT!!!!
     //DEPENDENCY INJECTION MUST BE DONE MANUALLY
+    //    repo = new TempRepo();
     service = new CustomerService(repo);
     //------------------------------------------//
 
     Customer customer1 = customerWithName().create();
     Customer customer2 = customerWithName().create();
     customerList = Arrays.asList(customer1,customer2);
-    customerFlux = saveAndGetCustomerFlux(customerList);
+    customerFlux = service.saveAll(customerList);
   }
 
 
@@ -101,7 +107,7 @@ public class ServiceTests extends ConfigTests {
 
 
   @Test
-  @DisplayName("Delete")
+  @DisplayName("DeleteById")
   public void deleteById() {
     StepVerifier.create(customerFlux)
                 .expectNextSequence(customerList)
@@ -149,16 +155,13 @@ public class ServiceTests extends ConfigTests {
       Assertions.assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
     }
   }
-
-
-  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
-
-    //    return repo.deleteAll()
-    //               .thenMany(Flux.fromIterable(customerList))
-    //               .flatMap(repo::save)
-    //               .doOnNext(item -> repo.findAll());
-
-
-    return service.saveAll(customerList);
-  }
 }
+
+
+//  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
+//    return repo.deleteAll()
+//               .thenMany(Flux.fromIterable(customerList))
+//               .flatMap(repo::save)
+//               .doOnNext(item -> repo.findAll());
+//    return service.saveAll(customerList);
+//  }
