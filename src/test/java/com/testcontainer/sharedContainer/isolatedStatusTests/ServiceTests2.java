@@ -1,27 +1,18 @@
 package com.testcontainer.sharedContainer.isolatedStatusTests;
 
-import com.testcontainer.api.Customer;
-import com.testcontainer.api.CustomerService;
-import com.testcontainer.api.ICustomerRepo;
-import com.testcontainer.api.ICustomerService;
+import com.testcontainer.api.entity.Customer;
+import com.testcontainer.api.service.CustomerService;
+import com.testcontainer.api.repo.ICustomerRepo;
+import com.testcontainer.api.service.ICustomerService;
 import com.testcontainer.sharedContainer.ConfigTests;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Lazy;
-import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
-import javax.swing.*;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static org.junit.jupiter.api.Assertions.assertTrue;

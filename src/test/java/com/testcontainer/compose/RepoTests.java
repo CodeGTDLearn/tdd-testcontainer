@@ -1,7 +1,7 @@
 package com.testcontainer.compose;
 
-import com.testcontainer.api.Customer;
-import com.testcontainer.api.ICustomerRepo;
+import com.testcontainer.api.entity.Customer;
+import com.testcontainer.api.repo.ICustomerRepo;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testcontainers.containers.DockerComposeContainer;

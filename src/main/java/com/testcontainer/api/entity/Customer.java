@@ -1,4 +1,4 @@
-package com.testcontainer.api;
+package com.testcontainer.api.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

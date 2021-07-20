@@ -1,5 +1,7 @@
-package com.testcontainer.api;
+package com.testcontainer.api.controller;
 
+import com.testcontainer.api.entity.Customer;
+import com.testcontainer.api.service.ICustomerService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

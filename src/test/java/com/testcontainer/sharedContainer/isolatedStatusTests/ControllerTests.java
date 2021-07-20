@@ -1,8 +1,8 @@
 package com.testcontainer.sharedContainer.isolatedStatusTests;
 
 import com.github.javafaker.Faker;
-import com.testcontainer.api.Customer;
-import com.testcontainer.api.ICustomerService;
+import com.testcontainer.api.entity.Customer;
+import com.testcontainer.api.service.ICustomerService;
 import com.testcontainer.sharedContainer.ConfigTests;
 import com.testcontainer.sharedContainer.ContainerConfig;
 import io.restassured.http.ContentType;

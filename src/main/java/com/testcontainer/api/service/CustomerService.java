@@ -1,5 +1,7 @@
-package com.testcontainer.api;
+package com.testcontainer.api.service;
 
+import com.testcontainer.api.entity.Customer;
+import com.testcontainer.api.repo.ICustomerRepo;
 import io.netty.util.internal.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

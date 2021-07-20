@@ -1,7 +1,7 @@
 package com.testcontainer.databuilder;
 
 import com.github.javafaker.Faker;
-import com.testcontainer.api.Customer;
+import com.testcontainer.api.entity.Customer;
 import lombok.Builder;
 import lombok.Getter;
 

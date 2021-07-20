@@ -1,5 +1,6 @@
-package com.testcontainer.api;
+package com.testcontainer.api.service;
 
+import com.testcontainer.api.entity.Customer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

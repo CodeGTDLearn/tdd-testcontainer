@@ -1,8 +1,8 @@
 package com.testcontainer.compose;
 
 import com.github.javafaker.Faker;
-import com.testcontainer.api.Customer;
-import com.testcontainer.api.ICustomerService;
+import com.testcontainer.api.entity.Customer;
+import com.testcontainer.api.service.ICustomerService;
 import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
 import org.junit.jupiter.api.*;
