@@ -1,11 +1,11 @@
-package com.testcontainer.sharedContainer.isolatedStatusTests;
+package com.testcontainer.container;
 
 import com.testcontainer.api.entity.Customer;
-import com.testcontainer.api.repo.ICustomerRepo;
-import com.testcontainer.sharedContainer.ConfigTests;
+import com.testcontainer.api.repository.IRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.test.context.junit.jupiter.EnabledIf;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -24,12 +24,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RepoTests extends ConfigTests {
 
+  final private String enabledTest = "true";
   private List<Customer> customerList;
   private Flux<Customer> customerFlux;
 
   @Lazy
   @Autowired
-  private ICustomerRepo repo;
+  private IRepository repo;
 
 
   @BeforeAll
@@ -44,6 +45,7 @@ public class RepoTests extends ConfigTests {
   }
 
 
+  //isolamento de tests -> carregando tudo que e necessario a cada teste, antes de cada teste
   @BeforeEach
   public void setUp() {
     Customer customer1 = customerWithName().create();
@@ -55,6 +57,7 @@ public class RepoTests extends ConfigTests {
 
   @Test
   @DisplayName("Save_V1")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void save1() {
     StepVerifier.create(customerFlux)
                 .expectNextSequence(customerList)
@@ -64,6 +67,7 @@ public class RepoTests extends ConfigTests {
 
   @Test
   @DisplayName("Save_V2")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void save2() {
     Customer customer = customerWithName().create();
     Mono<Customer> monoCustomer = repo.save(customer);
@@ -81,6 +85,7 @@ public class RepoTests extends ConfigTests {
 
   @Test
   @DisplayName("Find: Content")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void find_count() {
     StepVerifier
          .create(customerFlux)
@@ -97,6 +102,7 @@ public class RepoTests extends ConfigTests {
 
   @Test
   @DisplayName("Find: Objects")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void find_object() {
     StepVerifier
          .create(customerFlux)
@@ -108,6 +114,7 @@ public class RepoTests extends ConfigTests {
 
   @Test
   @DisplayName("DeleteById")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void deleteById() {
     StepVerifier.create(customerFlux)
                 .expectNextSequence(customerList)
@@ -132,6 +139,7 @@ public class RepoTests extends ConfigTests {
 
   @Test
   @DisplayName("Container")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void checkContainer() {
     assertTrue(sharedContainer.isRunning());
   }
@@ -139,6 +147,7 @@ public class RepoTests extends ConfigTests {
 
   @Test
   @DisplayName("BHWorks")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void bHWorks() {
     try {
       FutureTask<?> task = new FutureTask<>(() -> {
@@ -155,14 +164,4 @@ public class RepoTests extends ConfigTests {
       Assertions.assertTrue(e.getCause() instanceof BlockingOperationError,"detected");
     }
   }
-
-  //  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
-  //    return repo.deleteAll()
-  //               .thenMany(Flux.fromIterable(customerList))
-  //               .flatMap(repo::save)
-  //               .doOnNext(item -> repo.findAll());
-  //
-  //
-  //    return repo.saveAll(customerList);
-
 }

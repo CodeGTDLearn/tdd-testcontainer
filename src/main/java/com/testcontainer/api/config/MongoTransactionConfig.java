@@ -4,13 +4,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.ReactiveMongoDatabaseFactory;
 import org.springframework.data.mongodb.ReactiveMongoTransactionManager;
+import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
 
 //https://www.youtube.com/watch?v=9henAE6VUbk&t=364s
 @Configuration
-public class ConfigMongoTransaction {
+//@EnableReactiveMongoRepositories
+public class MongoTransactionConfig {
 
     @Bean
     TransactionalOperator transactionOperator(ReactiveTransactionManager txm) {

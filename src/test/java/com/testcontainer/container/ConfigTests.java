@@ -1,4 +1,4 @@
-package com.testcontainer.sharedContainer;
+package com.testcontainer.container;
 
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.http.ContentType;
@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -17,7 +15,6 @@ import org.springframework.test.context.ActiveProfiles;
 import reactor.blockhound.BlockHound;
 
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.*;
-import static org.springframework.test.annotation.DirtiesContext.MethodMode.*;
 
 /*------------------------------------------------------------
                          DataMongoTest

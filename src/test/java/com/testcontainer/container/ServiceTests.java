@@ -1,13 +1,13 @@
-package com.testcontainer.sharedContainer.isolatedStatusTests;
+package com.testcontainer.container;
 
 import com.testcontainer.api.entity.Customer;
 import com.testcontainer.api.service.CustomerService;
-import com.testcontainer.api.repo.ICustomerRepo;
+import com.testcontainer.api.repository.IRepository;
 import com.testcontainer.api.service.ICustomerService;
-import com.testcontainer.sharedContainer.ConfigTests;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.test.context.junit.jupiter.EnabledIf;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -24,22 +24,18 @@ import java.util.concurrent.TimeoutException;
 import static com.testcontainer.databuilder.CustomerBuilder.customerWithName;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// https://www.baeldung.com/spring-data-mongodb-reactive
 public class ServiceTests extends ConfigTests {
 
+  final private String enabledTest = "true";
   private List<Customer> customerList;
   private Flux<Customer> customerFlux;
 
-  //  @Lazy
-  //  @Autowired
-  //  private ICustomerRepo repo;
-
+  @Lazy
   @Autowired
-  ApplicationContext context;
+  private IRepository repo;
 
   private ICustomerService service;
-
-
-  ICustomerRepo repo = (ICustomerRepo) context.getBean("ICustomerRepo");
 
 
   @BeforeAll
@@ -59,7 +55,6 @@ public class ServiceTests extends ConfigTests {
     //------------------------------------------//
     //VERY IMPORTANT!!!!
     //DEPENDENCY INJECTION MUST BE DONE MANUALLY
-    //    repo = new TempRepo();
     service = new CustomerService(repo);
     //------------------------------------------//
 
@@ -72,6 +67,7 @@ public class ServiceTests extends ConfigTests {
 
   @Test
   @DisplayName("Save")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void save() {
     StepVerifier.create(customerFlux)
                 .expectNextSequence(customerList)
@@ -81,6 +77,7 @@ public class ServiceTests extends ConfigTests {
 
   @Test
   @DisplayName("Find: Content")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void find_count() {
     StepVerifier
          .create(customerFlux)
@@ -97,6 +94,7 @@ public class ServiceTests extends ConfigTests {
 
   @Test
   @DisplayName("Find: Objects")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void find_object() {
     StepVerifier
          .create(customerFlux)
@@ -108,6 +106,7 @@ public class ServiceTests extends ConfigTests {
 
   @Test
   @DisplayName("DeleteById")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void deleteById() {
     StepVerifier.create(customerFlux)
                 .expectNextSequence(customerList)
@@ -132,6 +131,7 @@ public class ServiceTests extends ConfigTests {
 
   @Test
   @DisplayName("Container")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void checkContainer() {
     assertTrue(sharedContainer.isRunning());
   }
@@ -139,6 +139,7 @@ public class ServiceTests extends ConfigTests {
 
   @Test
   @DisplayName("BHWorks")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void bHWorks() {
     try {
       FutureTask<?> task = new FutureTask<>(() -> {
@@ -156,12 +157,3 @@ public class ServiceTests extends ConfigTests {
     }
   }
 }
-
-
-//  private Flux<Customer> saveAndGetCustomerFlux(List<Customer> customerList) {
-//    return repo.deleteAll()
-//               .thenMany(Flux.fromIterable(customerList))
-//               .flatMap(repo::save)
-//               .doOnNext(item -> repo.findAll());
-//    return service.saveAll(customerList);
-//  }

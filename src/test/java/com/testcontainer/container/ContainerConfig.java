@@ -1,4 +1,4 @@
-package com.testcontainer.sharedContainer;
+package com.testcontainer.container;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;

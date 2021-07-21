@@ -1,10 +1,8 @@
-package com.testcontainer.sharedContainer.isolatedStatusTests;
+package com.testcontainer.container;
 
 import com.github.javafaker.Faker;
 import com.testcontainer.api.entity.Customer;
 import com.testcontainer.api.service.ICustomerService;
-import com.testcontainer.sharedContainer.ConfigTests;
-import com.testcontainer.sharedContainer.ContainerConfig;
 import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
 import org.junit.jupiter.api.*;
@@ -12,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.junit.jupiter.EnabledIf;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Mono;
@@ -38,6 +37,7 @@ import static org.springframework.http.HttpStatus.*;
 @AutoConfigureWebTestClient
 public class ControllerTests extends ContainerConfig {
 
+  final private String enabledTest = "true";
   private List<Customer> customerList;
   private Customer customerWithId;
 
@@ -87,6 +87,7 @@ public class ControllerTests extends ContainerConfig {
 
   @Test
   @DisplayName("Save_WebClient")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void save_WebTestClient() {
     mockedWebClient
          .post()
@@ -110,6 +111,7 @@ public class ControllerTests extends ContainerConfig {
 
   @Test
   @DisplayName("Save")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void save_RA() {
     RestAssuredWebTestClient
          .given()
@@ -141,6 +143,7 @@ public class ControllerTests extends ContainerConfig {
 
   @Test
   @DisplayName("FindAll")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void findAll() {
 
     StepVerifier
@@ -172,6 +175,7 @@ public class ControllerTests extends ContainerConfig {
 
   @Test
   @DisplayName("DeleteById")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void deleteById() {
     StepVerifier
          .create(service.save(customerWithId))
@@ -206,6 +210,7 @@ public class ControllerTests extends ContainerConfig {
 
   @Test
   @DisplayName("Container")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void checkContainer() {
     assertTrue(sharedContainer.isRunning());
   }
@@ -213,6 +218,7 @@ public class ControllerTests extends ContainerConfig {
 
   @Test
   @DisplayName("BHWorks")
+  @EnabledIf(expression = enabledTest, loadContext = true)
   public void bHWorks() {
     try {
       FutureTask<?> task = new FutureTask<>(() -> {

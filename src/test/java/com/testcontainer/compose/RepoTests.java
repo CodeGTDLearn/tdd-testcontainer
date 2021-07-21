@@ -1,7 +1,7 @@
 package com.testcontainer.compose;
 
 import com.testcontainer.api.entity.Customer;
-import com.testcontainer.api.repo.ICustomerRepo;
+import com.testcontainer.api.repository.IRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testcontainers.containers.DockerComposeContainer;
@@ -33,7 +33,7 @@ public class RepoTests extends ConfigTests {
 
 
     @Autowired
-    private ICustomerRepo repo;
+    private IRepository repo;
 
 
     @BeforeAll

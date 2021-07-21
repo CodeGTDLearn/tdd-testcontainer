@@ -1,7 +1,7 @@
 package com.testcontainer.api.service;
 
 import com.testcontainer.api.entity.Customer;
-import com.testcontainer.api.repo.ICustomerRepo;
+import com.testcontainer.api.repository.IRepository;
 import io.netty.util.internal.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,8 @@ import java.util.List;
 @AllArgsConstructor
 public class CustomerService implements ICustomerService {
 
-  private final ICustomerRepo repo;
+
+  private final IRepository repo;
 
 
   @Override

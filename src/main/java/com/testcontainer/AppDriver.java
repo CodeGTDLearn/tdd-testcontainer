@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRep
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
-@EnableReactiveMongoRepositories
+@EnableReactiveMongoRepositories(basePackages = {"com.testcontainer.api.repository"})
 @EnableTransactionManagement
 public class AppDriver {
 
