@@ -3,12 +3,12 @@ package com.testcontainer.container;
 import com.github.javafaker.Faker;
 import com.testcontainer.api.entity.Customer;
 import com.testcontainer.api.service.ICustomerService;
+import com.testcontainer.container.config.Config;
+import com.testcontainer.container.config.ControllerConfig;
 import io.restassured.http.ContentType;
 import io.restassured.module.webtestclient.RestAssuredWebTestClient;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.EnabledIf;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -30,12 +30,11 @@ import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.*;
 
-@SpringBootTest(webEnvironment = RANDOM_PORT)
-@AutoConfigureWebTestClient
-public class ControllerTests extends ContainerConfig {
+//@SpringBootTest(webEnvironment = RANDOM_PORT)
+//@AutoConfigureWebTestClient
+public class ControllerTests extends ControllerConfig {
 
   final private String enabledTest = "true";
   private List<Customer> customerList;
@@ -55,13 +54,13 @@ public class ControllerTests extends ContainerConfig {
 
   @BeforeAll
   public static void beforeAll() {
-    ConfigTests.beforeAll();
+    Config.beforeAll();
   }
 
 
   @AfterAll
   public static void afterAll() {
-    ConfigTests.afterAll();
+    Config.afterAll();
   }
 
 

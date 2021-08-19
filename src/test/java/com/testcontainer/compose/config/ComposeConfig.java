@@ -1,4 +1,4 @@
-package com.testcontainer.compose;
+package com.testcontainer.compose.config;
 
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -24,7 +24,9 @@ public class ComposeConfig {
     public DockerComposeContainer<?> compose =
             new DockerComposeContainer<>(
                     new File(COMPOSE_PATH))
-                    .withExposedService(SERVICE,SERVICE_PORT,Wait.forListeningPort());
+                    .withExposedService(SERVICE,
+                                        SERVICE_PORT,
+                                        Wait.forListeningPort());
 
 }
 

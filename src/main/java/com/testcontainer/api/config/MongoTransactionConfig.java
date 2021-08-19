@@ -11,7 +11,6 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 
 //https://www.youtube.com/watch?v=9henAE6VUbk&t=364s
 @Configuration
-//@EnableReactiveMongoRepositories
 public class MongoTransactionConfig {
 
     @Bean
