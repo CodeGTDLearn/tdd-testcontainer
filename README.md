@@ -1,13 +1,14 @@
-### Initial Project Sectors
+### Project Index
 
-1. Testcontainers
+1. TestContainers
    * MergedAnnotations
    * Static/Non-Static Containers
-     - inhiretance + annotations
+     - inheritance
+     - annotations
    * Static/Non-Static Compose
 
 
-2. TestContextConfiguration
+2. Test Annotations
    - @TestConfiguration
    - @Import
 
